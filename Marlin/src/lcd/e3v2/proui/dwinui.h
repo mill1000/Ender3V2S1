@@ -1,11 +1,11 @@
 /**
  * DWIN UI Enhanced implementation
  * Author: Miguel A. Risco-Castillo
- * Version: 3.11.1
- * Date: 2022/01/19
+ * Version: 3.12.1
+ * Date: 2022/01/30
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as
+ * it under the terms of the GNU Lesser General Public License as 
  * published by the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
@@ -217,6 +217,8 @@ namespace DWINUI {
   extern void (*onTitleDraw)(TitleClass* title);
   extern void (*onMenuDraw)(MenuClass* menu);
 
+  extern const char * Author;
+
   // DWIN LCD Initialization
   void init();
 
@@ -265,6 +267,17 @@ namespace DWINUI {
   inline void LineTo(uint16_t x, uint16_t y) {
     DWIN_Draw_Line(pencolor, cursor.x, cursor.y, x, y);
   }
+
+  // Extend a frame box
+  //  v: value to extend
+  inline frame_rect_t ExtendFrame(frame_rect_t frame, uint8_t v) {
+    frame_rect_t t;
+    t.x = frame.x - v;
+    t.y = frame.y - v;
+    t.w = frame.w + 2*v;
+    t.h = frame.h + 2*v;
+    return t;
+  };
 
   // Draw an Icon with transparent background from the library ICON
   //  icon: Icon ID
@@ -384,7 +397,7 @@ namespace DWINUI {
   inline void Draw_String(uint16_t color, FSTR_P string, uint16_t rlimit = 0xFFFF) {
     Draw_String(color, FTOP(string), rlimit);
   }
-  
+
   // Draw a string
   //  size: Font size
   //  color: Character color

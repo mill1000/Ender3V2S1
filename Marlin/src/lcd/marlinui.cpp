@@ -43,16 +43,12 @@ MarlinUI ui;
 #if HAS_DISPLAY
   #include "../gcode/queue.h"
   #include "fontutils.h"
-  #include "../sd/cardreader.h"
 #endif
 
 #if ENABLED(DWIN_CREALITY_LCD)
   #include "e3v2/creality/dwin.h"
-#elif ENABLED(DWIN_CREALITY_LCD_ENHANCED)
-  #include "fontutils.h"
+#elif ENABLED(DWIN_LCD_PROUI)
   #include "e3v2/proui/dwin.h"
-#elif ENABLED(DWIN_CREALITY_LCD_JYERSUI)
-  #include "e3v2/jyersui/dwin.h"
 #endif
 
 #if ENABLED(LCD_PROGRESS_BAR) && !IS_TFTGLCD_PANEL
@@ -70,7 +66,7 @@ MarlinUI ui;
 constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
 
 #if HAS_STATUS_MESSAGE
-  #if ENABLED(STATUS_MESSAGE_SCROLLING) && EITHER(HAS_WIRED_LCD, DWIN_CREALITY_LCD_ENHANCED)
+  #if ENABLED(STATUS_MESSAGE_SCROLLING) && EITHER(HAS_WIRED_LCD, DWIN_LCD_PROUI)
     uint8_t MarlinUI::status_scroll_offset; // = 0
   #endif
   char MarlinUI::status_message[MAX_MESSAGE_LENGTH + 1];
@@ -97,8 +93,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
 #endif
 
 #if HAS_LCD_CONTRAST
-  uint8_t MarlinUI::contrast; // Initialized by settings.load()
-
+  uint8_t MarlinUI::contrast = LCD_CONTRAST_DEFAULT; // Initialized by settings.load()
   void MarlinUI::set_contrast(const uint8_t value) {
     contrast = constrain(value, LCD_CONTRAST_MIN, LCD_CONTRAST_MAX);
     _set_contrast();
@@ -157,11 +152,11 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
   }
 #endif
 
-#if EITHER(HAS_LCD_MENU, EXTENSIBLE_UI)
+#if EITHER(HAS_MARLINUI_MENU, EXTENSIBLE_UI)
   bool MarlinUI::lcd_clicked;
 #endif
 
-#if EITHER(HAS_WIRED_LCD, DWIN_CREALITY_LCD_JYERSUI)
+#if HAS_WIRED_LCD
 
   bool MarlinUI::get_blink() {
     static uint8_t blink = 0;
@@ -176,6 +171,77 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
 
 #endif
 
+// Encoder Handling
+#if HAS_ENCODER_ACTION
+  uint32_t MarlinUI::encoderPosition;
+  volatile int8_t encoderDiff; // Updated in update_buttons, added to encoderPosition every LCD update
+#endif
+
+void MarlinUI::init() {
+
+  init_lcd();
+
+  #if HAS_DIGITAL_BUTTONS
+    #if BUTTON_EXISTS(EN1)
+      SET_INPUT_PULLUP(BTN_EN1);
+    #endif
+    #if BUTTON_EXISTS(EN2)
+      SET_INPUT_PULLUP(BTN_EN2);
+    #endif
+    #if BUTTON_EXISTS(ENC)
+      SET_INPUT_PULLUP(BTN_ENC);
+    #endif
+    #if BUTTON_EXISTS(ENC_EN)
+      SET_INPUT_PULLUP(BTN_ENC_EN);
+    #endif
+    #if BUTTON_EXISTS(BACK)
+      SET_INPUT_PULLUP(BTN_BACK);
+    #endif
+    #if BUTTON_EXISTS(UP)
+      SET_INPUT(BTN_UP);
+    #endif
+    #if BUTTON_EXISTS(DWN)
+      SET_INPUT(BTN_DWN);
+    #endif
+    #if BUTTON_EXISTS(LFT)
+      SET_INPUT(BTN_LFT);
+    #endif
+    #if BUTTON_EXISTS(RT)
+      SET_INPUT(BTN_RT);
+    #endif
+  #endif
+
+  #if HAS_SHIFT_ENCODER
+
+    #if ENABLED(SR_LCD_2W_NL) // Non latching 2 wire shift register
+
+      SET_OUTPUT(SR_DATA_PIN);
+      SET_OUTPUT(SR_CLK_PIN);
+
+    #elif PIN_EXISTS(SHIFT_CLK)
+
+      SET_OUTPUT(SHIFT_CLK_PIN);
+      OUT_WRITE(SHIFT_LD_PIN, HIGH);
+      #if PIN_EXISTS(SHIFT_EN)
+        OUT_WRITE(SHIFT_EN_PIN, LOW);
+      #endif
+      SET_INPUT_PULLUP(SHIFT_OUT_PIN);
+
+    #endif
+
+  #endif // HAS_SHIFT_ENCODER
+
+  #if BOTH(HAS_ENCODER_ACTION, HAS_SLOW_BUTTONS)
+    slow_buttons = 0;
+  #endif
+
+  update_buttons();
+
+  TERN_(HAS_ENCODER_ACTION, encoderDiff = 0);
+
+  reset_status(); // Set welcome message
+}
+
 #if HAS_WIRED_LCD
 
   #if HAS_MARLINUI_U8GLIB
@@ -184,30 +250,28 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
 
   #include "lcdprint.h"
 
-  #include "../sd/cardreader.h"
-
   #include "../module/temperature.h"
   #include "../module/planner.h"
   #include "../module/motion.h"
 
-  #if HAS_LCD_MENU
+  #if HAS_MARLINUI_MENU
     #include "../module/settings.h"
   #endif
 
   #if ENABLED(AUTO_BED_LEVELING_UBL)
-    #include "../feature/bedlevel/bedlevel.h"
+  #include "../feature/bedlevel/bedlevel.h"
   #endif
 
   #if HAS_TRINAMIC_CONFIG
-    #include "../feature/tmc_util.h"
+  #include "../feature/tmc_util.h"
   #endif
 
   #if HAS_ADC_BUTTONS
-    #include "../module/thermistor/thermistors.h"
+  #include "../module/thermistor/thermistors.h"
   #endif
 
   #if HAS_POWER_MONITOR
-    #include "../feature/power_monitor.h"
+  #include "../feature/power_monitor.h"
   #endif
 
   #if ENABLED(PSU_CONTROL) && defined(LED_BACKLIGHT_TIMEOUT)
@@ -215,31 +279,31 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
   #endif
 
   #if HAS_ENCODER_ACTION
-    volatile uint8_t MarlinUI::buttons;
-    #if HAS_SLOW_BUTTONS
-      volatile uint8_t MarlinUI::slow_buttons;
-    #endif
-    #if HAS_TOUCH_BUTTONS
-      #include "touch/touch_buttons.h"
-      bool MarlinUI::on_edit_screen = false;
-    #endif
+  volatile uint8_t MarlinUI::buttons;
+  #if HAS_SLOW_BUTTONS
+    volatile uint8_t MarlinUI::slow_buttons;
+  #endif
+  #if HAS_TOUCH_BUTTONS
+    #include "touch/touch_buttons.h"
+    bool MarlinUI::on_edit_screen = false;
+  #endif
   #endif
 
   #if SCREENS_CAN_TIME_OUT
-    bool MarlinUI::defer_return_to_status;
+  bool MarlinUI::defer_return_to_status;
     millis_t MarlinUI::return_to_status_ms = 0;
   #endif
 
   uint8_t MarlinUI::lcd_status_update_delay = 1; // First update one loop delayed
 
   #if BOTH(FILAMENT_LCD_DISPLAY, SDSUPPORT)
-    millis_t MarlinUI::next_filament_display; // = 0
+  millis_t MarlinUI::next_filament_display; // = 0
   #endif
 
   millis_t MarlinUI::next_button_update_ms; // = 0
 
   #if HAS_MARLINUI_U8GLIB
-    bool MarlinUI::drawing_screen, MarlinUI::first_page; // = false
+  bool MarlinUI::drawing_screen, MarlinUI::first_page; // = false
   #endif
 
   #if IS_DWIN_MARLINUI
@@ -247,15 +311,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
     bool MarlinUI::old_is_printing;
   #endif
 
-  // Encoder Handling
-  #if HAS_ENCODER_ACTION
-    uint32_t MarlinUI::encoderPosition;
-    volatile int8_t encoderDiff; // Updated in update_buttons, added to encoderPosition every LCD update
-  #endif
-
   #if ENABLED(SDSUPPORT)
-
-    #include "../sd/cardreader.h"
 
     #if MARLINUI_SCROLL_NAME
       uint8_t MarlinUI::filename_scroll_pos, MarlinUI::filename_scroll_max;
@@ -289,7 +345,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
 
   #endif
 
-  #if HAS_LCD_MENU
+  #if HAS_MARLINUI_MENU
     #include "menu/menu.h"
 
     screenFunc_t MarlinUI::currentScreen; // Initialized in CTOR
@@ -380,7 +436,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
           col = (LCD_WIDTH - plen - slen) / 2;
           row = LCD_HEIGHT > 3 ? 1 : 0;
         }
-        if (LCD_HEIGHT >= 8) row = LCD_HEIGHT / 2 - 2;
+          if (LCD_HEIGHT >= 8) row = LCD_HEIGHT / 2 - 2;
         wrap_string_P(col, row, pref, true);
         if (string) {
           if (col) { col = 0; row++; } // Move to the start of the next line
@@ -391,70 +447,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
 
     #endif // !HAS_GRAPHICAL_TFT
 
-  #endif // HAS_LCD_MENU
-
-  void MarlinUI::init() {
-
-    init_lcd();
-
-    #if HAS_DIGITAL_BUTTONS
-      #if BUTTON_EXISTS(EN1)
-        SET_INPUT_PULLUP(BTN_EN1);
-      #endif
-      #if BUTTON_EXISTS(EN2)
-        SET_INPUT_PULLUP(BTN_EN2);
-      #endif
-      #if BUTTON_EXISTS(ENC)
-        SET_INPUT_PULLUP(BTN_ENC);
-      #endif
-      #if BUTTON_EXISTS(ENC_EN)
-        SET_INPUT_PULLUP(BTN_ENC_EN);
-      #endif
-      #if BUTTON_EXISTS(BACK)
-        SET_INPUT_PULLUP(BTN_BACK);
-      #endif
-      #if BUTTON_EXISTS(UP)
-        SET_INPUT(BTN_UP);
-      #endif
-      #if BUTTON_EXISTS(DWN)
-        SET_INPUT(BTN_DWN);
-      #endif
-      #if BUTTON_EXISTS(LFT)
-        SET_INPUT(BTN_LFT);
-      #endif
-      #if BUTTON_EXISTS(RT)
-        SET_INPUT(BTN_RT);
-      #endif
-    #endif
-
-    #if HAS_SHIFT_ENCODER
-
-      #if ENABLED(SR_LCD_2W_NL) // Non latching 2 wire shift register
-
-        SET_OUTPUT(SR_DATA_PIN);
-        SET_OUTPUT(SR_CLK_PIN);
-
-      #elif PIN_EXISTS(SHIFT_CLK)
-
-        SET_OUTPUT(SHIFT_CLK_PIN);
-        OUT_WRITE(SHIFT_LD_PIN, HIGH);
-        #if PIN_EXISTS(SHIFT_EN)
-          OUT_WRITE(SHIFT_EN_PIN, LOW);
-        #endif
-        SET_INPUT_PULLUP(SHIFT_OUT_PIN);
-
-      #endif
-
-    #endif // HAS_SHIFT_ENCODER
-
-    #if BOTH(HAS_ENCODER_ACTION, HAS_SLOW_BUTTONS)
-      slow_buttons = 0;
-    #endif
-
-    update_buttons();
-
-    TERN_(HAS_ENCODER_ACTION, encoderDiff = 0);
-  }
+  #endif // HAS_MARLINUI_MENU
 
   ////////////////////////////////////////////
   ///////////// Keypad Handling //////////////
@@ -464,7 +457,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
 
     volatile uint8_t MarlinUI::keypad_buttons;
 
-    #if HAS_LCD_MENU && !HAS_ADC_BUTTONS
+    #if HAS_MARLINUI_MENU && !HAS_ADC_BUTTONS
 
       void lcd_move_x();
       void lcd_move_y();
@@ -491,9 +484,9 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
         if (keypad_buttons) {
           #if HAS_ENCODER_ACTION
             refresh(LCDVIEW_REDRAW_NOW);
-            #if HAS_LCD_MENU
+            #if HAS_MARLINUI_MENU
               if (encoderDirection == -(ENCODERBASE)) { // HAS_ADC_BUTTONS forces REVERSE_MENU_DIRECTION, so this indicates menu navigation
-                     if (RRK(EN_KEYPAD_UP))     encoderPosition += ENCODER_STEPS_PER_MENU_ITEM;
+                    if (RRK(EN_KEYPAD_UP))     encoderPosition += ENCODER_STEPS_PER_MENU_ITEM;
                 else if (RRK(EN_KEYPAD_DOWN))   encoderPosition -= ENCODER_STEPS_PER_MENU_ITEM;
                 else if (RRK(EN_KEYPAD_LEFT))   { MenuItem_back::action(); quick_feedback(); }
                 else if (RRK(EN_KEYPAD_RIGHT))  { return_to_status(); quick_feedback(); }
@@ -501,13 +494,13 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
               else
             #endif
             {
-              #if HAS_LCD_MENU
-                     if (RRK(EN_KEYPAD_UP))     encoderPosition -= epps;
+              #if HAS_MARLINUI_MENU
+                    if (RRK(EN_KEYPAD_UP))     encoderPosition -= epps;
                 else if (RRK(EN_KEYPAD_DOWN))   encoderPosition += epps;
                 else if (RRK(EN_KEYPAD_LEFT))   { MenuItem_back::action(); quick_feedback(); }
                 else if (RRK(EN_KEYPAD_RIGHT))  encoderPosition = 0;
               #else
-                     if (RRK(EN_KEYPAD_UP)   || RRK(EN_KEYPAD_LEFT))  encoderPosition -= epps;
+                    if (RRK(EN_KEYPAD_UP)   || RRK(EN_KEYPAD_LEFT))  encoderPosition -= epps;
                 else if (RRK(EN_KEYPAD_DOWN) || RRK(EN_KEYPAD_RIGHT)) encoderPosition += epps;
               #endif
             }
@@ -532,7 +525,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
 
           const bool homed = all_axes_homed();
 
-          #if HAS_LCD_MENU
+          #if HAS_MARLINUI_MENU
 
             if (RRK(EN_KEYPAD_MIDDLE))  goto_screen(menu_move);
 
@@ -551,7 +544,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
               if (RRK(EN_KEYPAD_UP))    _reprapworld_keypad_move(Y_AXIS, -1);
             }
 
-          #endif // HAS_LCD_MENU
+          #endif // HAS_MARLINUI_MENU
 
           if (!homed && RRK(EN_KEYPAD_F1)) queue.inject_P(G28_STR);
           return true;
@@ -565,10 +558,10 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
   #endif // IS_RRW_KEYPAD && HAS_ENCODER_ACTION
 
   /**
-   * Status Screen
-   *
-   * This is very display-dependent, so the lcd implementation draws this.
-   */
+  * Status Screen
+  *
+  * This is very display-dependent, so the lcd implementation draws this.
+  */
 
   #if BASIC_PROGRESS_BAR
     millis_t MarlinUI::progress_bar_ms; // = 0
@@ -579,7 +572,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
 
   void MarlinUI::status_screen() {
 
-    TERN_(HAS_LCD_MENU, ENCODER_RATE_MULTIPLY(false));
+    TERN_(HAS_MARLINUI_MENU, ENCODER_RATE_MULTIPLY(false));
 
     #if BASIC_PROGRESS_BAR
 
@@ -623,15 +616,13 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
 
     #endif // BASIC_PROGRESS_BAR
 
-    #if HAS_LCD_MENU
+    #if HAS_MARLINUI_MENU
       if (use_click()) {
         #if BOTH(FILAMENT_LCD_DISPLAY, SDSUPPORT)
           next_filament_display = millis() + 5000UL;  // Show status message for 5s
         #endif
         goto_screen(menu_main);
-        #if DISABLED(NO_LCD_REINIT)
-          init_lcd(); // May revive the LCD if static electricity killed it
-        #endif
+        IF_DISABLED(NO_LCD_REINIT, init_lcd()); // May revive the LCD if static electricity killed it
         return;
       }
 
@@ -679,7 +670,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
   void MarlinUI::kill_screen(FSTR_P const lcd_error, FSTR_P const lcd_component) {
     init();
     status_printf(1, F(S_FMT ": " S_FMT), FTOP(lcd_error), FTOP(lcd_component));
-    TERN_(HAS_LCD_MENU, return_to_status());
+    TERN_(HAS_MARLINUI_MENU, return_to_status());
 
     // RED ALERT. RED ALERT.
     #ifdef LED_BACKLIGHT_TIMEOUT
@@ -707,7 +698,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
 
   void MarlinUI::quick_feedback(const bool clear_buttons/*=true*/) {
     TERN_(HAS_TOUCH_SLEEP, wakeup_screen()); // Wake up the TFT with most buttons
-    TERN_(HAS_LCD_MENU, refresh());
+    TERN_(HAS_MARLINUI_MENU, refresh());
 
     #if HAS_ENCODER_ACTION
       if (clear_buttons) buttons = 0;
@@ -718,9 +709,9 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
 
     #if HAS_CHIRP
       chirp(); // Buzz and wait. Is the delay needed for buttons to settle?
-      #if BOTH(HAS_LCD_MENU, USE_BEEPER)
+      #if BOTH(HAS_MARLINUI_MENU, USE_BEEPER)
         for (int8_t i = 5; i--;) { buzzer.tick(); delay(2); }
-      #elif HAS_LCD_MENU
+      #elif HAS_MARLINUI_MENU
         delay(10);
       #endif
     #endif
@@ -730,7 +721,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
   /////////////// Manual Move ////////////////
   ////////////////////////////////////////////
 
-  #if HAS_LCD_MENU
+  #if HAS_MARLINUI_MENU
 
     ManualMove MarlinUI::manual_move{};
 
@@ -763,7 +754,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
      *     This is used to achieve more rapid stepping on kinematic machines.
      *
      * Currently used by the _lcd_move_xyz function in menu_motion.cpp
-     * and the ubl_map_move_to_xy function in menu_ubl.cpp.
+       * and the ubl_map_move_to_xy function in menu_ubl.cpp.
      */
     void ManualMove::task() {
 
@@ -810,7 +801,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
             TERN_(MULTI_E_MANUAL, axis == E_AXIS ? e_index :) active_extruder
           );
 
-          //SERIAL_ECHOLNPGM("Add planner.move with Axis ", AS_CHAR(axis_codes[axis]), " at FR ", fr_mm_s);
+            //SERIAL_ECHOLNPGM("Add planner.move with Axis ", AS_CHAR(axis_codes[axis]), " at FR ", fr_mm_s);
 
           axis = NO_AXIS_ENUM;
 
@@ -827,7 +818,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
       TERN_(MULTI_E_MANUAL, if (move_axis == E_AXIS) e_index = eindex);
       start_time = millis() + (menu_scale < 0.99f ? 0UL : 250UL); // delay for bigger moves
       axis = move_axis;
-      //SERIAL_ECHOLNPGM("Post Move with Axis ", AS_CHAR(axis_codes[axis]), " soon.");
+        //SERIAL_ECHOLNPGM("Post Move with Axis ", AS_CHAR(axis_codes[axis]), " soon.");
     }
 
     #if ENABLED(AUTO_BED_LEVELING_UBL)
@@ -842,40 +833,40 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
 
     #endif
 
-  #endif // HAS_LCD_MENU
+  #endif // HAS_MARLINUI_MENU
 
   /**
-   * Update the LCD, read encoder buttons, etc.
-   *   - Read button states
-   *   - Check the SD Card slot state
-   *   - Act on RepRap World keypad input
-   *   - Update the encoder position
-   *   - Apply acceleration to the encoder position
-   *   - Do refresh(LCDVIEW_CALL_REDRAW_NOW) on controller events
-   *   - Reset the Info Screen timeout if there's any input
-   *   - Update status indicators, if any
-   *
-   *   Run the current LCD menu handler callback function:
-   *   - Call the handler only if lcdDrawUpdate != LCDVIEW_NONE
-   *   - Before calling the handler, LCDVIEW_CALL_NO_REDRAW => LCDVIEW_NONE
-   *   - Call the menu handler. Menu handlers should do the following:
-   *     - If a value changes, set lcdDrawUpdate to LCDVIEW_REDRAW_NOW and draw the value
-   *       (Encoder events automatically set lcdDrawUpdate for you.)
-   *     - if (should_draw()) { redraw }
-   *     - Before exiting the handler set lcdDrawUpdate to:
-   *       - LCDVIEW_CLEAR_CALL_REDRAW to clear screen and set LCDVIEW_CALL_REDRAW_NEXT.
-   *       - LCDVIEW_REDRAW_NOW to draw now (including remaining stripes).
-   *       - LCDVIEW_CALL_REDRAW_NEXT to draw now and get LCDVIEW_REDRAW_NOW on the next loop.
-   *       - LCDVIEW_CALL_NO_REDRAW to draw now and get LCDVIEW_NONE on the next loop.
-   *     - NOTE: For graphical displays menu handlers may be called 2 or more times per loop,
-   *             so don't change lcdDrawUpdate without considering this.
-   *
-   *   After the menu handler callback runs (or not):
-   *   - Clear the LCD if lcdDrawUpdate == LCDVIEW_CLEAR_CALL_REDRAW
-   *   - Update lcdDrawUpdate for the next loop (i.e., move one state down, usually)
-   *
-   * This function is only called from the main thread.
-   */
+  * Update the LCD, read encoder buttons, etc.
+  *   - Read button states
+  *   - Check the SD Card slot state
+  *   - Act on RepRap World keypad input
+  *   - Update the encoder position
+  *   - Apply acceleration to the encoder position
+  *   - Do refresh(LCDVIEW_CALL_REDRAW_NOW) on controller events
+  *   - Reset the Info Screen timeout if there's any input
+  *   - Update status indicators, if any
+  *
+  *   Run the current LCD menu handler callback function:
+  *   - Call the handler only if lcdDrawUpdate != LCDVIEW_NONE
+  *   - Before calling the handler, LCDVIEW_CALL_NO_REDRAW => LCDVIEW_NONE
+  *   - Call the menu handler. Menu handlers should do the following:
+  *     - If a value changes, set lcdDrawUpdate to LCDVIEW_REDRAW_NOW and draw the value
+  *       (Encoder events automatically set lcdDrawUpdate for you.)
+  *     - if (should_draw()) { redraw }
+  *     - Before exiting the handler set lcdDrawUpdate to:
+  *       - LCDVIEW_CLEAR_CALL_REDRAW to clear screen and set LCDVIEW_CALL_REDRAW_NEXT.
+  *       - LCDVIEW_REDRAW_NOW to draw now (including remaining stripes).
+  *       - LCDVIEW_CALL_REDRAW_NEXT to draw now and get LCDVIEW_REDRAW_NOW on the next loop.
+  *       - LCDVIEW_CALL_NO_REDRAW to draw now and get LCDVIEW_NONE on the next loop.
+  *     - NOTE: For graphical displays menu handlers may be called 2 or more times per loop,
+  *             so don't change lcdDrawUpdate without considering this.
+  *
+  *   After the menu handler callback runs (or not):
+  *   - Clear the LCD if lcdDrawUpdate == LCDVIEW_CLEAR_CALL_REDRAW
+  *   - Update lcdDrawUpdate for the next loop (i.e., move one state down, usually)
+  *
+  * This function is only called from the main thread.
+  */
 
   LCDViewAction MarlinUI::lcdDrawUpdate = LCDVIEW_CLEAR_CALL_REDRAW;
   millis_t next_lcd_update_ms;
@@ -893,7 +884,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
       leds.update_timeout(powerManager.psu_on);
     #endif
 
-    #if HAS_LCD_MENU
+    #if HAS_MARLINUI_MENU
 
       // Handle any queued Move Axis motion
       manual_move.task();
@@ -914,7 +905,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
 
       #if HAS_TOUCH_BUTTONS
         if (touch_buttons) {
-          reset_status_timeout(ms);
+            reset_status_timeout(ms);
           if (touch_buttons & (EN_A | EN_B)) {              // Menu arrows, in priority
             if (ELAPSED(ms, next_button_update_ms)) {
               encoderDiff = (ENCODER_STEPS_PER_MENU_ITEM) * epps * encoderDirection;
@@ -948,7 +939,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
         goto_previous_screen();
       }
 
-    #endif // HAS_LCD_MENU
+    #endif // HAS_MARLINUI_MENU
 
     if (ELAPSED(ms, next_lcd_update_ms) || TERN0(HAS_MARLINUI_U8GLIB, drawing_screen)) {
 
@@ -995,7 +986,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
         if (encoderPastThreshold || lcd_clicked) {
           if (encoderPastThreshold && TERN1(IS_TFTGLCD_PANEL, !external_control)) {
 
-            #if BOTH(HAS_LCD_MENU, ENCODER_RATE_MULTIPLIER)
+            #if BOTH(HAS_MARLINUI_MENU, ENCODER_RATE_MULTIPLIER)
 
               int32_t encoderMultiplier = 1;
 
@@ -1014,10 +1005,10 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
                   //#define ENCODER_RATE_MULTIPLIER_DEBUG
                   #if ENABLED(ENCODER_RATE_MULTIPLIER_DEBUG)
                     SERIAL_ECHO_START();
-                    SERIAL_ECHOPGM("Enc Step Rate: ", encoderStepRate);
-                    SERIAL_ECHOPGM("  Multiplier: ", encoderMultiplier);
-                    SERIAL_ECHOPGM("  ENCODER_10X_STEPS_PER_SEC: ", ENCODER_10X_STEPS_PER_SEC);
-                    SERIAL_ECHOPGM("  ENCODER_100X_STEPS_PER_SEC: ", ENCODER_100X_STEPS_PER_SEC);
+                      SERIAL_ECHOPGM("Enc Step Rate: ", encoderStepRate);
+                      SERIAL_ECHOPGM("  Multiplier: ", encoderMultiplier);
+                      SERIAL_ECHOPGM("  ENCODER_10X_STEPS_PER_SEC: ", ENCODER_10X_STEPS_PER_SEC);
+                      SERIAL_ECHOPGM("  ENCODER_100X_STEPS_PER_SEC: ", ENCODER_100X_STEPS_PER_SEC);
                     SERIAL_EOL();
                   #endif
                 }
@@ -1055,7 +1046,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
         refresh(LCDVIEW_REDRAW_NOW);
       }
 
-      #if BOTH(HAS_LCD_MENU, SCROLL_LONG_FILENAMES)
+      #if BOTH(HAS_MARLINUI_MENU, SCROLL_LONG_FILENAMES)
         // If scrolling of long file names is enabled and we are in the sd card menu,
         // cause a refresh to occur until all the text has scrolled into view.
         if (currentScreen == menu_media && !lcd_status_update_delay--) {
@@ -1090,7 +1081,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
 
           #if ENABLED(LIGHTWEIGHT_UI)
             const bool in_status = on_status_screen(),
-                       do_u8g_loop = !in_status;
+                        do_u8g_loop = !in_status;
             lcd_in_status(in_status);
             if (in_status) status_screen();
           #else
@@ -1126,7 +1117,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
 
         #endif
 
-        TERN_(HAS_LCD_MENU, lcd_clicked = false);
+        TERN_(HAS_MARLINUI_MENU, lcd_clicked = false);
 
         // Keeping track of the longest time for an individual LCD update.
         // Used to do screen throttling when the planner starts to fill up.
@@ -1199,15 +1190,15 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
       { adc_other_button, HAL_ADC_RANGE, 1 + BLEN_KEYPAD_F2     }, // F2
       { adc_other_button, HAL_ADC_RANGE, 1 + BLEN_KEYPAD_F3     }, // F3
       {  ADC_BUTTON_VALUE(ADC_BUTTONS_LEFT_R_PULLDOWN)   - adc_button_tolerance,
-         ADC_BUTTON_VALUE(ADC_BUTTONS_LEFT_R_PULLDOWN)   + adc_button_tolerance, 1 + BLEN_KEYPAD_LEFT   }, // LEFT  ( 272 ...  472)
+        ADC_BUTTON_VALUE(ADC_BUTTONS_LEFT_R_PULLDOWN)   + adc_button_tolerance, 1 + BLEN_KEYPAD_LEFT   }, // LEFT  ( 272 ...  472)
       {  ADC_BUTTON_VALUE(ADC_BUTTONS_RIGHT_R_PULLDOWN)  - adc_button_tolerance,
-         ADC_BUTTON_VALUE(ADC_BUTTONS_RIGHT_R_PULLDOWN)  + adc_button_tolerance, 1 + BLEN_KEYPAD_RIGHT  }, // RIGHT (1948 ... 2148)
+        ADC_BUTTON_VALUE(ADC_BUTTONS_RIGHT_R_PULLDOWN)  + adc_button_tolerance, 1 + BLEN_KEYPAD_RIGHT  }, // RIGHT (1948 ... 2148)
       {  ADC_BUTTON_VALUE(ADC_BUTTONS_UP_R_PULLDOWN)     - adc_button_tolerance,
-         ADC_BUTTON_VALUE(ADC_BUTTONS_UP_R_PULLDOWN)     + adc_button_tolerance, 1 + BLEN_KEYPAD_UP     }, // UP    ( 618 ...  818)
+        ADC_BUTTON_VALUE(ADC_BUTTONS_UP_R_PULLDOWN)     + adc_button_tolerance, 1 + BLEN_KEYPAD_UP     }, // UP    ( 618 ...  818)
       {  ADC_BUTTON_VALUE(ADC_BUTTONS_DOWN_R_PULLDOWN)   - adc_button_tolerance,
-         ADC_BUTTON_VALUE(ADC_BUTTONS_DOWN_R_PULLDOWN)   + adc_button_tolerance, 1 + BLEN_KEYPAD_DOWN   }, // DOWN  (2686 ... 2886)
+        ADC_BUTTON_VALUE(ADC_BUTTONS_DOWN_R_PULLDOWN)   + adc_button_tolerance, 1 + BLEN_KEYPAD_DOWN   }, // DOWN  (2686 ... 2886)
       {  ADC_BUTTON_VALUE(ADC_BUTTONS_MIDDLE_R_PULLDOWN) - adc_button_tolerance,
-         ADC_BUTTON_VALUE(ADC_BUTTONS_MIDDLE_R_PULLDOWN) + adc_button_tolerance, 1 + BLEN_KEYPAD_MIDDLE }, // ENTER (1205 ... 1405)
+        ADC_BUTTON_VALUE(ADC_BUTTONS_MIDDLE_R_PULLDOWN) + adc_button_tolerance, 1 + BLEN_KEYPAD_MIDDLE }, // ENTER (1205 ... 1405)
     };
 
     uint8_t get_ADC_keyValue() {
@@ -1218,7 +1209,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
         if (currentkpADCValue < adc_other_button)
           LOOP_L_N(i, ADC_KEY_NUM) {
             const uint16_t lo = pgm_read_word(&stADCKeyTable[i].ADCKeyValueMin),
-                           hi = pgm_read_word(&stADCKeyTable[i].ADCKeyValueMax);
+                          hi = pgm_read_word(&stADCKeyTable[i].ADCKeyValueMax);
             if (WITHIN(currentkpADCValue, lo, hi)) return pgm_read_byte(&stADCKeyTable[i].ADCKeyNo);
           }
       }
@@ -1340,7 +1331,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
             case ENCODER_PHASE_2: ENCODER_SPIN(ENCODER_PHASE_1, ENCODER_PHASE_3); break;
             case ENCODER_PHASE_3: ENCODER_SPIN(ENCODER_PHASE_2, ENCODER_PHASE_0); break;
           }
-          #if BOTH(HAS_LCD_MENU, AUTO_BED_LEVELING_UBL)
+          #if BOTH(HAS_MARLINUI_MENU, AUTO_BED_LEVELING_UBL)
             external_encoder();
           #endif
           lastEncoderBits = enc;
@@ -1466,7 +1457,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
   void MarlinUI::set_alert_status(FSTR_P const fstr) {
     set_status(fstr, 1);
     TERN_(HAS_TOUCH_SLEEP, wakeup_screen());
-    TERN_(HAS_LCD_MENU, return_to_status());
+    TERN_(HAS_MARLINUI_MENU, return_to_status());
   }
 
   #include <stdarg.h>
@@ -1504,14 +1495,13 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
 
     #endif
 
-    #if ENABLED(STATUS_MESSAGE_SCROLLING) && EITHER(HAS_WIRED_LCD, DWIN_CREALITY_LCD_ENHANCED)
+    #if ENABLED(STATUS_MESSAGE_SCROLLING) && EITHER(HAS_WIRED_LCD, DWIN_LCD_PROUI)
       status_scroll_offset = 0;
-      #endif
+    #endif
 
     TERN_(EXTENSIBLE_UI, ExtUI::onStatusChanged(status_message));
     TERN_(DWIN_CREALITY_LCD, DWIN_StatusChanged(status_message));
-    TERN_(DWIN_CREALITY_LCD_ENHANCED, DWIN_CheckStatusMessage());
-    TERN_(DWIN_CREALITY_LCD_JYERSUI, CrealityDWIN.Update_Status(status_message));
+    TERN_(DWIN_LCD_PROUI, DWIN_CheckStatusMessage());
   }
 
   #if ENABLED(STATUS_MESSAGE_SCROLLING)
@@ -1551,10 +1541,10 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
     IF_DISABLED(SDSUPPORT, print_job_timer.stop());
     TERN_(HOST_PROMPT_SUPPORT, hostui.prompt_open(PROMPT_INFO, F("UI Aborted"), FPSTR(DISMISS_STR)));
     LCD_MESSAGE(MSG_PRINT_ABORTED);
-    TERN_(HAS_LCD_MENU, return_to_status());
+    TERN_(HAS_MARLINUI_MENU, return_to_status());
   }
 
-  #if BOTH(HAS_LCD_MENU, PSU_CONTROL)
+  #if BOTH(HAS_MARLINUI_MENU, PSU_CONTROL)
 
     void MarlinUI::poweroff() {
       queue.inject(F("M81" TERN_(POWER_OFF_WAIT_FOR_COOLDOWN, "S")));
@@ -1566,11 +1556,11 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
   void MarlinUI::flow_fault() {
     LCD_ALERTMESSAGE(MSG_FLOWMETER_FAULT);
     TERN_(HAS_BUZZER, buzz(1000, 440));
-    TERN_(HAS_LCD_MENU, return_to_status());
+    TERN_(HAS_MARLINUI_MENU, return_to_status());
   }
 
   void MarlinUI::pause_print() {
-    #if HAS_LCD_MENU
+    #if HAS_MARLINUI_MENU
       synchronize(GET_TEXT(MSG_PAUSING));
       defer_status_screen();
     #endif
@@ -1692,7 +1682,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
           ExtUI::onMediaRemoved();
         #elif PIN_EXISTS(SD_DETECT)
           LCD_MESSAGE(MSG_MEDIA_REMOVED);
-          #if HAS_LCD_MENU
+          #if HAS_MARLINUI_MENU
             if (!defer_return_to_status) return_to_status();
           #endif
         #endif
@@ -1718,7 +1708,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
 
 #endif // SDSUPPORT
 
-#if HAS_LCD_MENU
+#if HAS_MARLINUI_MENU
   void MarlinUI::reset_settings() {
     settings.reset();
     completion_feedback();
@@ -1774,7 +1764,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
 
 #if ENABLED(EEPROM_SETTINGS)
 
-  #if HAS_LCD_MENU
+  #if HAS_MARLINUI_MENU
     void MarlinUI::init_eeprom() {
       const bool good = settings.init_eeprom();
       completion_feedback(good);
@@ -1802,7 +1792,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
     }
 
     void MarlinUI::eeprom_alert(const uint8_t msgid) {
-      #if HAS_LCD_MENU
+      #if HAS_MARLINUI_MENU
         editable.uint8 = msgid;
         goto_screen([]{
           PGM_P const restore_msg = GET_TEXT(MSG_INIT_EEPROM);

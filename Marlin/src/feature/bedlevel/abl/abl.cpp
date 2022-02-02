@@ -35,6 +35,10 @@
   #include "../../../lcd/extui/ui_api.h"
 #endif
 
+#if ProUI
+  #include "../../../lcd/e3v2/proui/proui.h"
+#endif
+
 xy_pos_t bilinear_grid_spacing, bilinear_start;
 xy_float_t bilinear_grid_factor;
 bed_mesh_t z_values;
@@ -42,7 +46,7 @@ bed_mesh_t z_values;
 /**
  * Extrapolate a single point from its neighbors
  */
-static void extrapolate_one_point(const uint8_t x, const uint8_t y, const int8_t xdir, const int8_t ydir) {
+void extrapolate_one_point(const uint8_t x, const uint8_t y, const int8_t xdir, const int8_t ydir) {
   if (!isnan(z_values[x][y])) return;
   if (DEBUGGING(LEVELING)) {
     DEBUG_ECHOPGM("Extrapolate [");
@@ -97,19 +101,22 @@ static void extrapolate_one_point(const uint8_t x, const uint8_t y, const int8_t
  * using linear extrapolation, away from the center.
  */
 void extrapolate_unprobed_bed_level() {
+  #if ProUI
+    ProEx.abl_extrapolate();
+  #else
   #ifdef HALF_IN_X
     constexpr uint8_t ctrx2 = 0, xend = GRID_MAX_POINTS_X - 1;
-  #else
-    constexpr uint8_t ctrx1 = (GRID_MAX_CELLS_X) / 2, // left-of-center
-                      ctrx2 = (GRID_MAX_POINTS_X) / 2,  // right-of-center
+    #else
+      constexpr uint8_t ctrx1 = (GRID_MAX_CELLS_X) / 2, // left-of-center
+                        ctrx2 = (GRID_MAX_POINTS_X) / 2,  // right-of-center
                       xend = ctrx1;
   #endif
 
   #ifdef HALF_IN_Y
     constexpr uint8_t ctry2 = 0, yend = GRID_MAX_POINTS_Y - 1;
-  #else
-    constexpr uint8_t ctry1 = (GRID_MAX_CELLS_Y) / 2, // top-of-center
-                      ctry2 = (GRID_MAX_POINTS_Y) / 2,  // bottom-of-center
+    #else
+      constexpr uint8_t ctry1 = (GRID_MAX_CELLS_Y) / 2, // top-of-center
+                        ctry2 = (GRID_MAX_POINTS_Y) / 2,  // bottom-of-center
                       yend = ctry1;
   #endif
 
@@ -131,7 +138,7 @@ void extrapolate_unprobed_bed_level() {
       #endif
       extrapolate_one_point(x2, y2, -1, -1);       // right-above - -
     }
-
+  #endif
 }
 
 void print_bilinear_leveling_grid() {

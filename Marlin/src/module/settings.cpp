@@ -36,7 +36,7 @@
  */
 
 // Change EEPROM version if the structure changes
-#define EEPROM_VERSION "V86"
+#define EEPROM_VERSION "M86"
 #define EEPROM_OFFSET 100
 
 // Check the integrity of data offsets.
@@ -74,10 +74,8 @@
 
 #if ENABLED(EXTENSIBLE_UI)
   #include "../lcd/extui/ui_api.h"
-#elif ENABLED(DWIN_CREALITY_LCD_ENHANCED)
+#elif ENABLED(DWIN_LCD_PROUI)
   #include "../lcd/e3v2/proui/dwin.h"
-#elif ENABLED(DWIN_CREALITY_LCD_JYERSUI)
-  #include "../lcd/e3v2/jyersui/dwin.h"
 #endif
 
 #if HAS_SERVOS
@@ -244,8 +242,13 @@ typedef struct SettingsDataStruct {
   //
   float mbl_z_offset;                                   // mbl.z_offset
   uint8_t mesh_num_x, mesh_num_y;                       // GRID_MAX_POINTS_X, GRID_MAX_POINTS_Y
-  float mbl_z_values[TERN(MESH_BED_LEVELING, GRID_MAX_POINTS_X, 3)]   // mbl.z_values
-                    [TERN(MESH_BED_LEVELING, GRID_MAX_POINTS_Y, 3)];
+  #if ProUI
+    float mbl_z_values[TERN(MESH_BED_LEVELING, GRID_LIMIT, 3)]   // mbl.z_values
+                      [TERN(MESH_BED_LEVELING, GRID_LIMIT, 3)];
+  #else
+    float mbl_z_values[TERN(MESH_BED_LEVELING, GRID_MAX_POINTS_X, 3)]   // mbl.z_values
+                      [TERN(MESH_BED_LEVELING, GRID_MAX_POINTS_Y, 3)];
+  #endif
 
   //
   // HAS_BED_PROBE
@@ -472,10 +475,8 @@ typedef struct SettingsDataStruct {
   //
   // Ender-3 V2 DWIN
   //
-  #if ENABLED(DWIN_CREALITY_LCD_ENHANCED)
+  #if ENABLED(DWIN_LCD_PROUI)
     uint8_t dwin_data[eeprom_data_size];
-  #elif ENABLED(DWIN_CREALITY_LCD_JYERSUI)
-    uint8_t dwin_settings[CrealityDWIN.eeprom_data_size];
   #endif
 
   //
@@ -577,6 +578,9 @@ void MarlinSettings::postprocess() {
     update_workspace_offset((AxisEnum)i);
     update_software_endstops((AxisEnum)i);
   }
+
+  TERN_(HAS_LCD_CONTRAST, ui.refresh_contrast());
+  TERN_(HAS_LCD_BRIGHTNESS, ui.refresh_brightness());
 
   TERN_(ENABLE_LEVELING_FADE_HEIGHT, set_z_fade_height(new_z_fade_height, false)); // false = no report
 
@@ -705,7 +709,7 @@ void MarlinSettings::postprocess() {
       EEPROM_SKIP(build_hash);  // Skip the hash slot
     #endif
 
-    EEPROM_SKIP(working_crc);   // Skip the checksum slot
+    EEPROM_SKIP(working_crc); // Skip the checksum slot
 
     working_crc = 0; // clear before first "real data"
 
@@ -794,17 +798,28 @@ void MarlinSettings::postprocess() {
     //
     {
       #if ENABLED(MESH_BED_LEVELING)
-        static_assert(
-          sizeof(mbl.z_values) == (GRID_MAX_POINTS) * sizeof(mbl.z_values[0][0]),
-          "MBL Z array is the wrong size."
-        );
+        #if ProUI
+          static_assert(
+            sizeof(mbl.z_values) == (GRID_LIMIT * GRID_LIMIT) * sizeof(mbl.z_values[0][0]),
+            "MBL Z array is the wrong size."
+          );
+        #else
+          static_assert(
+            sizeof(mbl.z_values) == (GRID_MAX_POINTS) * sizeof(mbl.z_values[0][0]),
+            "MBL Z array is the wrong size."
+          );
+        #endif
       #else
         dummyf = 0;
       #endif
 
-      const uint8_t mesh_num_x = TERN(MESH_BED_LEVELING, GRID_MAX_POINTS_X, 3),
-                    mesh_num_y = TERN(MESH_BED_LEVELING, GRID_MAX_POINTS_Y, 3);
-
+      #if ProUI
+        const uint8_t mesh_num_x = TERN(MESH_BED_LEVELING, GRID_LIMIT, 3),
+                      mesh_num_y = TERN(MESH_BED_LEVELING, GRID_LIMIT, 3);
+      #else
+        const uint8_t mesh_num_x = TERN(MESH_BED_LEVELING, GRID_MAX_POINTS_X, 3),
+                      mesh_num_y = TERN(MESH_BED_LEVELING, GRID_MAX_POINTS_Y, 3);
+      #endif
       EEPROM_WRITE(TERN(MESH_BED_LEVELING, mbl.z_offset, dummyf));
       EEPROM_WRITE(mesh_num_x);
       EEPROM_WRITE(mesh_num_y);
@@ -846,10 +861,17 @@ void MarlinSettings::postprocess() {
     //
     {
       #if ENABLED(AUTO_BED_LEVELING_BILINEAR)
-        static_assert(
-          sizeof(z_values) == (GRID_MAX_POINTS) * sizeof(z_values[0][0]),
-          "Bilinear Z array is the wrong size."
-        );
+        #if ProUI
+          static_assert(
+            sizeof(z_values) == (GRID_LIMIT * GRID_LIMIT) * sizeof(z_values[0][0]),
+            "Bilinear Z array is the wrong size."
+          );
+        #else
+          static_assert(
+            sizeof(z_values) == (GRID_MAX_POINTS) * sizeof(z_values[0][0]),
+            "Bilinear Z array is the wrong size."
+          );
+        #endif
         #if ENABLED(X_AXIS_TWIST_COMPENSATION)
           static_assert(
             sizeof(xatc.z_values) == (XATC_MAX_POINTS) * sizeof(xatc.z_values[0]),
@@ -860,8 +882,13 @@ void MarlinSettings::postprocess() {
         const xy_pos_t bilinear_start{0}, bilinear_grid_spacing{0};
       #endif
 
-      const uint8_t grid_max_x = TERN(AUTO_BED_LEVELING_BILINEAR, GRID_MAX_POINTS_X, 3),
-                    grid_max_y = TERN(AUTO_BED_LEVELING_BILINEAR, GRID_MAX_POINTS_Y, 3);
+      #if ProUI
+        const uint8_t grid_max_x = TERN(AUTO_BED_LEVELING_BILINEAR, GRID_LIMIT, 3),
+                      grid_max_y = TERN(AUTO_BED_LEVELING_BILINEAR, GRID_LIMIT, 3);
+      #else
+        const uint8_t grid_max_x = TERN(AUTO_BED_LEVELING_BILINEAR, GRID_MAX_POINTS_X, 3),
+                      grid_max_y = TERN(AUTO_BED_LEVELING_BILINEAR, GRID_MAX_POINTS_Y, 3);
+      #endif
       EEPROM_WRITE(grid_max_x);
       EEPROM_WRITE(grid_max_y);
       EEPROM_WRITE(bilinear_grid_spacing);
@@ -1431,19 +1458,12 @@ void MarlinSettings::postprocess() {
     //
     // Creality DWIN User Data
     //
-    #if ENABLED(DWIN_CREALITY_LCD_ENHANCED)
+    #if ENABLED(DWIN_LCD_PROUI)
     {
       char dwin_data[eeprom_data_size] = { 0 };
       DWIN_StoreSettings(dwin_data);
       _FIELD_TEST(dwin_data);
       EEPROM_WRITE(dwin_data);
-    }
-    #elif ENABLED(DWIN_CREALITY_LCD_JYERSUI)
-    {
-      char dwin_settings[CrealityDWIN.eeprom_data_size] = { 0 };
-      CrealityDWIN.Save_Settings(dwin_settings);
-      _FIELD_TEST(dwin_settings);
-      EEPROM_WRITE(dwin_settings);
     }
     #endif
 
@@ -1573,7 +1593,7 @@ void MarlinSettings::postprocess() {
         stored_ver[1] = '\0';
       }
       DEBUG_ECHO_MSG("EEPROM version mismatch (EEPROM=", stored_ver, " Marlin=" EEPROM_VERSION ")");
-      TERN_(DWIN_CREALITY_LCD_ENHANCED, LCD_MESSAGE(MSG_ERR_EEPROM_VERSION));
+      TERN_(DWIN_LCD_PROUI, LCD_MESSAGE(MSG_ERR_EEPROM_VERSION));
 
       IF_DISABLED(EEPROM_AUTO_INIT, ui.eeprom_alert_version());
       eeprom_error = true;
@@ -1701,7 +1721,11 @@ void MarlinSettings::postprocess() {
 
         #if ENABLED(MESH_BED_LEVELING)
           if (!validating) mbl.z_offset = dummyf;
+          #if ProUI
+          if (mesh_num_x == (GRID_LIMIT) && mesh_num_y == (GRID_LIMIT)) {
+          #else
           if (mesh_num_x == (GRID_MAX_POINTS_X) && mesh_num_y == (GRID_MAX_POINTS_Y)) {
+          #endif
             // EEPROM data fits the current mesh
             EEPROM_READ(mbl.z_values);
           }
@@ -1748,7 +1772,11 @@ void MarlinSettings::postprocess() {
         EEPROM_READ_ALWAYS(grid_max_x);                // 1 byte
         EEPROM_READ_ALWAYS(grid_max_y);                // 1 byte
         #if ENABLED(AUTO_BED_LEVELING_BILINEAR)
+          #if ProUI
+          if (grid_max_x == (GRID_LIMIT) && grid_max_y == (GRID_LIMIT)) {
+          #else
           if (grid_max_x == (GRID_MAX_POINTS_X) && grid_max_y == (GRID_MAX_POINTS_Y)) {
+          #endif
             if (!validating) set_bed_leveling_enabled(false);
             EEPROM_READ(bilinear_grid_spacing);        // 2 ints
             EEPROM_READ(bilinear_start);               // 2 ints
@@ -1965,8 +1993,10 @@ void MarlinSettings::postprocess() {
       //
       #if HAS_USER_THERMISTORS
       {
+        user_thermistor_t user_thermistor[USER_THERMISTORS];
         _FIELD_TEST(user_thermistor);
-        EEPROM_READ(thermalManager.user_thermistor);
+        EEPROM_READ(user_thermistor);
+        if (!validating) COPY(thermalManager.user_thermistor, user_thermistor);
       }
       #endif
 
@@ -1974,78 +2004,67 @@ void MarlinSettings::postprocess() {
       // Power monitor
       //
       {
-        #if HAS_POWER_MONITOR
-          uint8_t &power_monitor_flags = power_monitor.flags;
-        #else
-          uint8_t power_monitor_flags;
-        #endif
+        uint8_t power_monitor_flags;
         _FIELD_TEST(power_monitor_flags);
         EEPROM_READ(power_monitor_flags);
+        TERN_(HAS_POWER_MONITOR, if (!validating) power_monitor.flags = power_monitor_flags);
       }
 
       //
       // LCD Contrast
       //
       {
-        _FIELD_TEST(lcd_contrast);
         uint8_t lcd_contrast;
+        _FIELD_TEST(lcd_contrast);
         EEPROM_READ(lcd_contrast);
-        TERN_(HAS_LCD_CONTRAST, if (!validating) ui.set_contrast(lcd_contrast));
+        TERN_(HAS_LCD_CONTRAST, if (!validating) ui.contrast = lcd_contrast);
       }
 
       //
       // LCD Brightness
       //
       {
-        _FIELD_TEST(lcd_brightness);
         uint8_t lcd_brightness;
+        _FIELD_TEST(lcd_brightness);
         EEPROM_READ(lcd_brightness);
-        TERN_(HAS_LCD_BRIGHTNESS, if (!validating) ui.set_brightness(lcd_brightness));
+        TERN_(HAS_LCD_BRIGHTNESS, if (!validating) ui.brightness = lcd_brightness);
       }
 
       //
       // Controller Fan
       //
       {
+        controllerFan_settings_t cfs = { 0 };
         _FIELD_TEST(controllerFan_settings);
-        #if ENABLED(CONTROLLER_FAN_EDITABLE)
-          const controllerFan_settings_t &cfs = controllerFan.settings;
-        #else
-          controllerFan_settings_t cfs = { 0 };
-        #endif
         EEPROM_READ(cfs);
+        TERN_(CONTROLLER_FAN_EDITABLE, if (!validating) controllerFan.settings = cfs);
       }
 
       //
       // Power-Loss Recovery
       //
       {
+        bool recovery_enabled;
         _FIELD_TEST(recovery_enabled);
-        #if ENABLED(POWER_LOSS_RECOVERY)
-          const bool &recovery_enabled = recovery.enabled;
-        #else
-          bool recovery_enabled;
-        #endif
         EEPROM_READ(recovery_enabled);
+        TERN_(POWER_LOSS_RECOVERY, if (!validating) recovery.enabled = recovery_enabled);
       }
 
       //
       // Firmware Retraction
       //
       {
+        fwretract_settings_t fwretract_settings;
+        bool autoretract_enabled;
         _FIELD_TEST(fwretract_settings);
+        EEPROM_READ(fwretract_settings);
+        EEPROM_READ(autoretract_enabled);
 
         #if ENABLED(FWRETRACT)
-          EEPROM_READ(fwretract.settings);
-        #else
-          fwretract_settings_t fwretract_settings;
-          EEPROM_READ(fwretract_settings);
-        #endif
-        #if BOTH(FWRETRACT, FWRETRACT_AUTORETRACT)
-          EEPROM_READ(fwretract.autoretract_enabled);
-        #else
-          bool autoretract_enabled;
-          EEPROM_READ(autoretract_enabled);
+          if (!validating) {
+            fwretract.settings = fwretract_settings;
+            TERN_(FWRETRACT_AUTORETRACT, fwretract.autoretract_enabled = autoretract_enabled);
+          }
         #endif
       }
 
@@ -2368,19 +2387,12 @@ void MarlinSettings::postprocess() {
       //
       // Creality DWIN User Data
       //
-      #if ENABLED(DWIN_CREALITY_LCD_ENHANCED)
+      #if ENABLED(DWIN_LCD_PROUI)
       {
         const char dwin_data[eeprom_data_size] = { 0 };
         _FIELD_TEST(dwin_data);
         EEPROM_READ(dwin_data);
         if (!validating) DWIN_LoadSettings(dwin_data);
-      }
-      #elif ENABLED(DWIN_CREALITY_LCD_JYERSUI)
-      {
-        const char dwin_settings[CrealityDWIN.eeprom_data_size] = { 0 };
-        _FIELD_TEST(dwin_settings);
-        EEPROM_READ(dwin_settings);
-        if (!validating) CrealityDWIN.Load_Settings(dwin_settings);
       }
       #endif
 
@@ -2472,7 +2484,7 @@ void MarlinSettings::postprocess() {
       else if (working_crc != stored_crc) {
         eeprom_error = true;
         DEBUG_ERROR_MSG("EEPROM CRC mismatch - (stored) ", stored_crc, " != ", working_crc, " (calculated)!");
-        TERN_(DWIN_CREALITY_LCD_ENHANCED, LCD_MESSAGE(MSG_ERR_EEPROM_CRC));
+        TERN_(DWIN_LCD_PROUI, LCD_MESSAGE(MSG_ERR_EEPROM_CRC));
         IF_DISABLED(EEPROM_AUTO_INIT, ui.eeprom_alert_crc());
       }
       else if (!validating) {
@@ -2601,7 +2613,11 @@ void MarlinSettings::postprocess() {
         uint16_t crc = 0;
 
         #if ENABLED(OPTIMIZED_MESH_STORAGE)
-          int16_t z_mesh_store[GRID_MAX_POINTS_X][GRID_MAX_POINTS_Y];
+          #if ProUI
+            int16_t z_mesh_store[GRID_LIMIT][GRID_LIMIT];
+          #else
+            int16_t z_mesh_store[GRID_MAX_POINTS_X][GRID_MAX_POINTS_Y];
+          #endif
           ubl.set_store_from_mesh(ubl.z_values, z_mesh_store);
           uint8_t * const src = (uint8_t*)&z_mesh_store;
         #else
@@ -2637,7 +2653,11 @@ void MarlinSettings::postprocess() {
         int pos = mesh_slot_offset(slot);
         uint16_t crc = 0;
         #if ENABLED(OPTIMIZED_MESH_STORAGE)
-          int16_t z_mesh_store[GRID_MAX_POINTS_X][GRID_MAX_POINTS_Y];
+          #if ProUI
+            int16_t z_mesh_store[GRID_LIMIT][GRID_LIMIT];
+          #else
+            int16_t z_mesh_store[GRID_MAX_POINTS_X][GRID_MAX_POINTS_Y];
+          #endif
           uint8_t * const dest = (uint8_t*)&z_mesh_store;
         #else
           uint8_t * const dest = into ? (uint8_t*)into : (uint8_t*)&ubl.z_values;
@@ -2649,7 +2669,11 @@ void MarlinSettings::postprocess() {
 
         #if ENABLED(OPTIMIZED_MESH_STORAGE)
           if (into) {
-            float z_values[GRID_MAX_POINTS_X][GRID_MAX_POINTS_Y];
+            #if ProUI
+              float z_values[GRID_LIMIT][GRID_LIMIT];
+            #else
+              float z_values[GRID_MAX_POINTS_X][GRID_MAX_POINTS_Y];
+            #endif
             ubl.set_mesh_from_store(z_mesh_store, z_values);
             memcpy(into, z_values, sizeof(z_values));
           }
@@ -2789,8 +2813,7 @@ void MarlinSettings::reset() {
   #endif
 
   TERN_(EXTENSIBLE_UI, ExtUI::onFactoryReset());
-  TERN_(DWIN_CREALITY_LCD_ENHANCED, DWIN_SetDataDefaults());
-  TERN_(DWIN_CREALITY_LCD_JYERSUI, CrealityDWIN.Reset_Settings());
+  TERN_(DWIN_LCD_PROUI, DWIN_SetDataDefaults());
 
   //
   // Case Light Brightness
@@ -3028,12 +3051,12 @@ void MarlinSettings::reset() {
   //
   // LCD Contrast
   //
-  TERN_(HAS_LCD_CONTRAST, ui.set_contrast(DEFAULT_LCD_CONTRAST));
+  TERN_(HAS_LCD_CONTRAST, ui.contrast = LCD_CONTRAST_DEFAULT);
 
   //
   // LCD Brightness
   //
-  TERN_(HAS_LCD_BRIGHTNESS, ui.set_brightness(DEFAULT_LCD_BRIGHTNESS));
+  TERN_(HAS_LCD_BRIGHTNESS, ui.brightness = DEFAULT_LCD_BRIGHTNESS);
 
   //
   // Controller Fan
@@ -3237,8 +3260,13 @@ void MarlinSettings::reset() {
       #if ENABLED(MESH_BED_LEVELING)
 
         if (leveling_is_valid()) {
+          #if ProUI
+          LOOP_L_N(py, GRID_LIMIT) {
+            LOOP_L_N(px, GRID_LIMIT) {
+          #else
           LOOP_L_N(py, GRID_MAX_POINTS_Y) {
             LOOP_L_N(px, GRID_MAX_POINTS_X) {
+          #endif
               CONFIG_ECHO_START();
               SERIAL_ECHOPGM("  G29 S3 I", px, " J", py);
               SERIAL_ECHOLNPAIR_F_P(SP_Z_STR, LINEAR_UNIT(mbl.z_values[px][py]), 5);
@@ -3262,8 +3290,13 @@ void MarlinSettings::reset() {
       #elif ENABLED(AUTO_BED_LEVELING_BILINEAR)
 
         if (leveling_is_valid()) {
+          #if ProUI
+          LOOP_L_N(py, GRID_LIMIT) {
+            LOOP_L_N(px, GRID_LIMIT) {
+          #else
           LOOP_L_N(py, GRID_MAX_POINTS_Y) {
             LOOP_L_N(px, GRID_MAX_POINTS_X) {
+          #endif
               CONFIG_ECHO_START();
               SERIAL_ECHOPGM("  G29 W I", px, " J", py);
               SERIAL_ECHOLNPAIR_F_P(SP_Z_STR, LINEAR_UNIT(z_values[px][py]), 5);

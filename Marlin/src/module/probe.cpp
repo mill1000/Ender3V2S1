@@ -79,7 +79,7 @@
 
 #if ENABLED(EXTENSIBLE_UI)
   #include "../lcd/extui/ui_api.h"
-#elif ENABLED(DWIN_CREALITY_LCD_ENHANCED)
+#elif ENABLED(DWIN_LCD_PROUI)
   #include "../lcd/e3v2/proui/dwin.h"
 #endif
 
@@ -308,7 +308,7 @@ FORCE_INLINE void probe_specific_action(const bool deploy) {
 
       TERN_(HOST_PROMPT_SUPPORT, hostui.prompt_do(PROMPT_USER_CONTINUE, F("Stow Probe"), FPSTR(CONTINUE_STR)));
       TERN_(EXTENSIBLE_UI, ExtUI::onUserConfirmRequired(F("Stow Probe")));
-      TERN_(DWIN_CREALITY_LCD_ENHANCED, DWIN_Popup_Confirm(ICON_BLTouch, F("Stow Probe"), FPSTR(CONTINUE_STR)));
+      TERN_(DWIN_LCD_PROUI, DWIN_Popup_Confirm(ICON_BLTouch, F("Stow Probe"), FPSTR(CONTINUE_STR)));
       TERN_(HAS_RESUME_CONTINUE, wait_for_user_response());
       ui.reset_status();
 
@@ -373,7 +373,7 @@ FORCE_INLINE void probe_specific_action(const bool deploy) {
     #if HAS_HOTEND && (PROBING_NOZZLE_TEMP || LEVELING_NOZZLE_TEMP)
       #define WAIT_FOR_NOZZLE_HEAT
     #endif
-    #if HAS_HEATED_BED && (PROBING_BED_TEMP || LEVELING_BED_TEMP)
+    #if HAS_HEATED_BED && (PROBING_BED_TEMP || defined(LEVELING_BED_TEMP))  // ProUI
       #define WAIT_FOR_BED_HEAT
     #endif
 
@@ -655,8 +655,7 @@ float Probe::run_z_probe(const bool sanity_check/*=true*/) {
     // Raise to give the probe clearance
     do_blocking_move_to_z(current_position.z + Z_CLEARANCE_MULTI_PROBE, z_probe_fast_mm_s);
 
-  #elif Z_PROBE_FEEDRATE_FAST != Z_PROBE_FEEDRATE_SLOW
-
+  #elif TERN(ProUI, 1, Z_PROBE_FEEDRATE_FAST != Z_PROBE_FEEDRATE_SLOW)
     // If the nozzle is well over the travel height then
     // move down quickly before doing the slow probe
     const float z = Z_CLEARANCE_DEPLOY_PROBE + 5.0 + (offset.z < 0 ? -offset.z : 0);
@@ -792,9 +791,9 @@ float Probe::probe_at_point(const_float_t rx, const_float_t ry, const ProbePtRai
     current_position.i, current_position.j, current_position.k
   );
   if (!can_reach(npos, probe_relative)) {
-    if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPGM("Position Not Reachable");
-    return NAN;
-  }
+      if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPGM("Position Not Reachable");
+      return NAN;
+    }
   if (probe_relative) npos -= offset_xy;  // Get the nozzle position
 
   // Move the probe to the starting XYZ

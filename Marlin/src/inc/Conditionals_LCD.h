@@ -237,7 +237,7 @@
   #define LCD_HEIGHT                  10    // Character lines
   #define LCD_CONTRAST_MIN            127
   #define LCD_CONTRAST_MAX            255
-  #define DEFAULT_LCD_CONTRAST        250
+  #define LCD_CONTRAST_DEFAULT        250
   #define CONVERT_TO_EXT_ASCII        // Use extended 128-255 symbols from ASCII table.
                                       // At this time present conversion only for cyrillic - bg, ru and uk languages.
                                       // First 7 ASCII symbols in panel font must be replaced with Marlin's special symbols.
@@ -498,10 +498,8 @@
 #endif
 
 // Aliases for LCD features
-#if EITHER(DWIN_CREALITY_LCD, DWIN_CREALITY_LCD_ENHANCED)
+#if EITHER(DWIN_CREALITY_LCD, DWIN_LCD_PROUI)
   #define HAS_DWIN_E3V2_BASIC 1
-#endif
-#if EITHER(HAS_DWIN_E3V2_BASIC, DWIN_CREALITY_LCD_JYERSUI)
   #define HAS_DWIN_E3V2 1
 #endif
 
@@ -509,8 +507,10 @@
 #if HAS_DWIN_E3V2 || IS_DWIN_MARLINUI
   #define SERIAL_CATCHALL 0
   #ifndef LCD_SERIAL_PORT
-    #if MB(BTT_SKR_MINI_E3_V1_0, BTT_SKR_MINI_E3_V1_2, BTT_SKR_MINI_E3_V2_0, BTT_SKR_E3_TURBO)
+    #if MB(BTT_SKR_MINI_E3_V1_0, BTT_SKR_MINI_E3_V1_2, BTT_SKR_MINI_E3_V2_0, BTT_SKR_MINI_E3_V3_0, BTT_SKR_E3_TURBO)
       #define LCD_SERIAL_PORT 1
+    #elif MB(CREALITY_V24S1_301)
+      #define LCD_SERIAL_PORT 2 // Creality Ender3S1 board
     #else
       #define LCD_SERIAL_PORT 3 // Creality 4.x board
     #endif
@@ -533,7 +533,7 @@
   #endif
 #endif
 
-#if ANY(HAS_WIRED_LCD, EXTENSIBLE_UI, DWIN_CREALITY_LCD_JYERSUI)
+#if ANY(HAS_WIRED_LCD, EXTENSIBLE_UI, DWIN_LCD_PROUI)
   #define HAS_DISPLAY 1
 #endif
 
@@ -542,10 +542,14 @@
 #endif
 
 #if IS_ULTIPANEL && DISABLED(NO_LCD_MENUS)
-  #define HAS_LCD_MENU 1
+  #define HAS_MARLINUI_MENU 1
 #endif
 
-#if ANY(HAS_MARLINUI_U8GLIB, EXTENSIBLE_UI, HAS_MARLINUI_HD44780, IS_TFTGLCD_PANEL, IS_DWIN_MARLINUI, DWIN_CREALITY_LCD_JYERSUI)
+#if ANY(HAS_MARLINUI_MENU, EXTENSIBLE_UI, HAS_DWIN_E3V2)
+  #define HAS_MANUAL_MOVE_MENU 1
+#endif
+
+#if ANY(HAS_MARLINUI_U8GLIB, EXTENSIBLE_UI, HAS_MARLINUI_HD44780, IS_TFTGLCD_PANEL, IS_DWIN_MARLINUI)
   #define CAN_SHOW_REMAINING_TIME 1
 #endif
 

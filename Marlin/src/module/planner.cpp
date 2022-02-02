@@ -1558,8 +1558,7 @@ void Planner::check_axes_activity() {
 #endif
 
 #if HAS_LEVELING
-
-  constexpr xy_pos_t level_fulcrum = {
+  TERN(ProUI, ,constexpr) xy_pos_t level_fulcrum = {
     TERN(Z_SAFE_HOMING, Z_SAFE_HOMING_X_POINT, X_HOME_POS),
     TERN(Z_SAFE_HOMING, Z_SAFE_HOMING_Y_POINT, Y_HOME_POS)
   };

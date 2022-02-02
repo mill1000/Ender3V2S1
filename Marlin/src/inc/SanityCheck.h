@@ -756,9 +756,10 @@ static_assert(COUNT(arm) == LOGICAL_AXES, "AXIS_RELATIVE_MODES must contain " _L
 /**
  * Validate that the bed size fits
  */
-static_assert(X_MAX_LENGTH >= X_BED_SIZE, "Movement bounds (X_MIN_POS, X_MAX_POS) are too narrow to contain X_BED_SIZE.");
-static_assert(Y_MAX_LENGTH >= Y_BED_SIZE, "Movement bounds (Y_MIN_POS, Y_MAX_POS) are too narrow to contain Y_BED_SIZE.");
-
+#if !ProUI
+  static_assert(X_MAX_LENGTH >= X_BED_SIZE, "Movement bounds (X_MIN_POS, X_MAX_POS) are too narrow to contain X_BED_SIZE.");
+  static_assert(Y_MAX_LENGTH >= Y_BED_SIZE, "Movement bounds (Y_MIN_POS, Y_MAX_POS) are too narrow to contain Y_BED_SIZE.");
+#endif
 /**
  * Granular software endstops (Marlin >= 1.1.7)
  */
@@ -844,14 +845,14 @@ static_assert(Y_MAX_LENGTH >= Y_BED_SIZE, "Movement bounds (Y_MIN_POS, Y_MAX_POS
     #error "PROGRESS_MSG_EXPIRE must be greater than or equal to 0."
   #endif
 #elif ENABLED(LCD_SET_PROGRESS_MANUALLY) && NONE(HAS_MARLINUI_U8GLIB, HAS_GRAPHICAL_TFT, HAS_MARLINUI_HD44780, EXTENSIBLE_UI, HAS_DWIN_E3V2, IS_DWIN_MARLINUI)
-  #error "LCD_SET_PROGRESS_MANUALLY requires LCD_PROGRESS_BAR, Character LCD, Graphical LCD, TFT, DWIN_CREALITY_LCD, DWIN_CREALITY_LCD_ENHANCED, DWIN_CREALITY_LCD_JYERSUI, DWIN_MARLINUI_*, OR EXTENSIBLE_UI."
+  #error "LCD_SET_PROGRESS_MANUALLY requires LCD_PROGRESS_BAR, Character LCD, Graphical LCD, TFT, DWIN_CREALITY_LCD, DWIN_LCD_PROUI, DWIN_MARLINUI_*, OR EXTENSIBLE_UI."
 #endif
 
 #if ENABLED(USE_M73_REMAINING_TIME) && DISABLED(LCD_SET_PROGRESS_MANUALLY)
   #error "USE_M73_REMAINING_TIME requires LCD_SET_PROGRESS_MANUALLY"
 #endif
 
-#if !HAS_LCD_MENU && ENABLED(SD_REPRINT_LAST_SELECTED_FILE)
+#if !HAS_MARLINUI_MENU && ENABLED(SD_REPRINT_LAST_SELECTED_FILE)
   #error "SD_REPRINT_LAST_SELECTED_FILE currently requires a Marlin-native LCD menu."
 #endif
 
@@ -874,7 +875,7 @@ static_assert(Y_MAX_LENGTH >= Y_BED_SIZE, "Movement bounds (Y_MIN_POS, Y_MAX_POS
 /**
  * SD Card Settings
  */
-#if ALL(SDSUPPORT, ELB_FULL_GRAPHIC_CONTROLLER, HAS_LCD_MENU) && PIN_EXISTS(SD_DETECT) && SD_DETECT_STATE != HIGH && (SD_CONNECTION_IS(LCD) || !defined(SDCARD_CONNECTION))
+#if ALL(SDSUPPORT, ELB_FULL_GRAPHIC_CONTROLLER, HAS_MARLINUI_MENU) && PIN_EXISTS(SD_DETECT) && SD_DETECT_STATE != HIGH && (SD_CONNECTION_IS(LCD) || !defined(SDCARD_CONNECTION))
   #error "SD_DETECT_STATE must be set HIGH for SD on the ELB_FULL_GRAPHIC_CONTROLLER."
 #endif
 
@@ -1026,7 +1027,7 @@ static_assert(Y_MAX_LENGTH >= Y_BED_SIZE, "Movement bounds (Y_MIN_POS, Y_MAX_POS
   #endif
 #endif
 
-#if ENABLED(NOZZLE_PARK_FEATURE)
+#if ENABLED(NOZZLE_PARK_FEATURE) && !ProUI
   constexpr float npp[] = NOZZLE_PARK_POINT;
   static_assert(COUNT(npp) == XYZ, "NOZZLE_PARK_POINT requires X, Y, and Z values.");
   constexpr xyz_pos_t npp_xyz = NOZZLE_PARK_POINT;
@@ -1081,9 +1082,9 @@ static_assert(Y_MAX_LENGTH >= Y_BED_SIZE, "Movement bounds (Y_MIN_POS, Y_MAX_POS
     #error "PRUSA_MMU2S requires FILAMENT_RUNOUT_SENSOR. Enable it to continue."
   #elif ENABLED(MMU_EXTRUDER_SENSOR) && DISABLED(FILAMENT_RUNOUT_SENSOR)
     #error "MMU_EXTRUDER_SENSOR requires FILAMENT_RUNOUT_SENSOR. Enable it to continue."
-  #elif ENABLED(MMU_EXTRUDER_SENSOR) && !HAS_LCD_MENU
+  #elif ENABLED(MMU_EXTRUDER_SENSOR) && !HAS_MARLINUI_MENU
     #error "MMU_EXTRUDER_SENSOR requires an LCD supporting MarlinUI."
-  #elif ENABLED(MMU2_MENUS) && !HAS_LCD_MENU
+  #elif ENABLED(MMU2_MENUS) && !HAS_MARLINUI_MENU
     #error "MMU2_MENUS requires an LCD supporting MarlinUI."
   #elif DISABLED(ADVANCED_PAUSE_FEATURE)
     static_assert(nullptr == strstr(MMU2_FILAMENT_RUNOUT_SCRIPT, "M600"), "ADVANCED_PAUSE_FEATURE is required to use M600 with PRUSA_MMU2(S) / HAS_EXTENDABLE_MMU(S).");
@@ -1479,9 +1480,9 @@ static_assert(Y_MAX_LENGTH >= Y_BED_SIZE, "Movement bounds (Y_MIN_POS, Y_MAX_POS
     #error "You probably want to use Max Endstops for DELTA!"
   #elif ENABLED(ENABLE_LEVELING_FADE_HEIGHT) && DISABLED(AUTO_BED_LEVELING_BILINEAR) && !UBL_SEGMENTED
     #error "ENABLE_LEVELING_FADE_HEIGHT on DELTA requires AUTO_BED_LEVELING_BILINEAR or AUTO_BED_LEVELING_UBL."
-  #elif ENABLED(DELTA_AUTO_CALIBRATION) && !(HAS_BED_PROBE || HAS_LCD_MENU)
+  #elif ENABLED(DELTA_AUTO_CALIBRATION) && !(HAS_BED_PROBE || HAS_MARLINUI_MENU)
     #error "DELTA_AUTO_CALIBRATION requires a probe or LCD Controller."
-  #elif ENABLED(DELTA_CALIBRATION_MENU) && !HAS_LCD_MENU
+  #elif ENABLED(DELTA_CALIBRATION_MENU) && !HAS_MARLINUI_MENU
     #error "DELTA_CALIBRATION_MENU requires an LCD Controller."
   #elif ABL_USES_GRID
     #if ((GRID_MAX_POINTS_X) & 1) == 0 || ((GRID_MAX_POINTS_Y) & 1) == 0
@@ -1659,7 +1660,7 @@ static_assert(Y_MAX_LENGTH >= Y_BED_SIZE, "Movement bounds (Y_MIN_POS, Y_MAX_POS
   #if ENABLED(NOZZLE_AS_PROBE)
     static_assert(sanity_nozzle_to_probe_offset.x == 0 && sanity_nozzle_to_probe_offset.y == 0,
                   "NOZZLE_AS_PROBE requires the XY offsets in NOZZLE_TO_PROBE_OFFSET to both be 0.");
-  #elif !IS_KINEMATIC
+  #elsif !(IS_KINEMATIC || ProUI)
     static_assert(PROBING_MARGIN       >= 0, "PROBING_MARGIN must be >= 0.");
     static_assert(PROBING_MARGIN_BACK  >= 0, "PROBING_MARGIN_BACK must be >= 0.");
     static_assert(PROBING_MARGIN_FRONT >= 0, "PROBING_MARGIN_FRONT must be >= 0.");
@@ -1667,13 +1668,15 @@ static_assert(Y_MAX_LENGTH >= Y_BED_SIZE, "Movement bounds (Y_MIN_POS, Y_MAX_POS
     static_assert(PROBING_MARGIN_RIGHT >= 0, "PROBING_MARGIN_RIGHT must be >= 0.");
   #endif
 
-  #define _MARGIN(A) TERN(IS_SCARA, SCARA_PRINTABLE_RADIUS, TERN(DELTA, DELTA_PRINTABLE_RADIUS, ((A##_BED_SIZE) / 2)))
-  static_assert(PROBING_MARGIN       < _MARGIN(X), "PROBING_MARGIN is too large.");
-  static_assert(PROBING_MARGIN_BACK  < _MARGIN(Y), "PROBING_MARGIN_BACK is too large.");
-  static_assert(PROBING_MARGIN_FRONT < _MARGIN(Y), "PROBING_MARGIN_FRONT is too large.");
-  static_assert(PROBING_MARGIN_LEFT  < _MARGIN(X), "PROBING_MARGIN_LEFT is too large.");
-  static_assert(PROBING_MARGIN_RIGHT < _MARGIN(X), "PROBING_MARGIN_RIGHT is too large.");
-  #undef _MARGIN
+  #if !ProUI
+    #define _MARGIN(A) TERN(IS_SCARA, SCARA_PRINTABLE_RADIUS, TERN(DELTA, DELTA_PRINTABLE_RADIUS, ((A##_BED_SIZE) / 2)))
+    static_assert(PROBING_MARGIN       < _MARGIN(X), "PROBING_MARGIN is too large.");
+    static_assert(PROBING_MARGIN_BACK  < _MARGIN(Y), "PROBING_MARGIN_BACK is too large.");
+    static_assert(PROBING_MARGIN_FRONT < _MARGIN(Y), "PROBING_MARGIN_FRONT is too large.");
+    static_assert(PROBING_MARGIN_LEFT  < _MARGIN(X), "PROBING_MARGIN_LEFT is too large.");
+    static_assert(PROBING_MARGIN_RIGHT < _MARGIN(X), "PROBING_MARGIN_RIGHT is too large.");
+    #undef _MARGIN
+  #endif
 
   /**
    * Make sure Z raise values are set
@@ -1782,8 +1785,10 @@ static_assert(Y_MAX_LENGTH >= Y_BED_SIZE, "Movement bounds (Y_MIN_POS, Y_MAX_POS
   // Mesh Bed Leveling
   #if ENABLED(DELTA)
     #error "MESH_BED_LEVELING is not compatible with DELTA printers."
-  #elif (GRID_MAX_POINTS_X) > 9 || (GRID_MAX_POINTS_Y) > 9
-    #error "GRID_MAX_POINTS_X and GRID_MAX_POINTS_Y must be less than 10 for MBL."
+  #elif !ProUI
+    #if (GRID_MAX_POINTS_X) > 9 || (GRID_MAX_POINTS_Y) > 9
+      #error "GRID_MAX_POINTS_X and GRID_MAX_POINTS_Y must be less than 10 for MBL."
+    #endif
   #endif
 
 #endif
@@ -1820,7 +1825,7 @@ static_assert(Y_MAX_LENGTH >= Y_BED_SIZE, "Movement bounds (Y_MIN_POS, Y_MAX_POS
  * LCD_BED_LEVELING requirements
  */
 #if ENABLED(LCD_BED_LEVELING)
-  #if NONE(HAS_LCD_MENU, DWIN_CREALITY_LCD, DWIN_CREALITY_LCD_ENHANCED)
+  #if NONE(HAS_MARLINUI_MENU, DWIN_CREALITY_LCD, DWIN_LCD_PROUI)
     #error "LCD_BED_LEVELING is not supported by the selected LCD controller."
   #elif !(ENABLED(MESH_BED_LEVELING) || HAS_ABL_NOT_UBL)
     #error "LCD_BED_LEVELING requires MESH_BED_LEVELING or AUTO_BED_LEVELING."
@@ -1899,7 +1904,7 @@ static_assert(Y_MAX_LENGTH >= Y_BED_SIZE, "Movement bounds (Y_MIN_POS, Y_MAX_POS
 /**
  * Make sure Z_SAFE_HOMING point is reachable
  */
-#if ENABLED(Z_SAFE_HOMING)
+#if ENABLED(Z_SAFE_HOMING) && !ProUI
   static_assert(WITHIN(Z_SAFE_HOMING_X_POINT, X_MIN_POS, X_MAX_POS), "Z_SAFE_HOMING_X_POINT can't be reached by the nozzle.");
   static_assert(WITHIN(Z_SAFE_HOMING_Y_POINT, Y_MIN_POS, Y_MAX_POS), "Z_SAFE_HOMING_Y_POINT can't be reached by the nozzle.");
 #endif
@@ -2016,7 +2021,7 @@ static_assert(Y_MAX_LENGTH >= Y_BED_SIZE, "Movement bounds (Y_MIN_POS, Y_MAX_POS
 
 #if HAS_FAN0
   #if CONTROLLER_FAN_PIN == FAN_PIN
-    #error "You cannot set CONTROLLER_FAN_PIN equal to FAN_PIN."
+  #error "You cannot set CONTROLLER_FAN_PIN equal to FAN_PIN."
   #elif ENABLED(FAN_SOFT_PWM_REQUIRED) && DISABLED(FAN_SOFT_PWM)
     #error "FAN_SOFT_PWM is required. Enable it to continue."
   #endif
@@ -2691,7 +2696,7 @@ static_assert(Y_MAX_LENGTH >= Y_BED_SIZE, "Movement bounds (Y_MIN_POS, Y_MAX_POS
   + COUNT_ENABLED(ANYCUBIC_LCD_I3MEGA, ANYCUBIC_LCD_CHIRON, ANYCUBIC_TFT35) \
   + COUNT_ENABLED(DGUS_LCD_UI_ORIGIN, DGUS_LCD_UI_FYSETC, DGUS_LCD_UI_HIPRECY, DGUS_LCD_UI_MKS, DGUS_LCD_UI_RELOADED) \
   + COUNT_ENABLED(ENDER2_STOCKDISPLAY, CR10_STOCKDISPLAY) \
-  + COUNT_ENABLED(DWIN_CREALITY_LCD, DWIN_CREALITY_LCD_ENHANCED, DWIN_CREALITY_LCD_JYERSUI, DWIN_MARLINUI_PORTRAIT, DWIN_MARLINUI_LANDSCAPE) \
+  + COUNT_ENABLED(DWIN_CREALITY_LCD, DWIN_LCD_PROUI, DWIN_MARLINUI_PORTRAIT, DWIN_MARLINUI_LANDSCAPE) \
   + COUNT_ENABLED(FYSETC_MINI_12864_X_X, FYSETC_MINI_12864_1_2, FYSETC_MINI_12864_2_0, FYSETC_GENERIC_12864_1_1) \
   + COUNT_ENABLED(LCD_SAINSMART_I2C_1602, LCD_SAINSMART_I2C_2004) \
   + COUNT_ENABLED(MKS_12864OLED, MKS_12864OLED_SSD1306) \
@@ -2821,17 +2826,17 @@ static_assert(Y_MAX_LENGTH >= Y_BED_SIZE, "Movement bounds (Y_MIN_POS, Y_MAX_POS
   #elif BOTH(LCD_BED_LEVELING, PROBE_MANUALLY)
     #error "DWIN_CREALITY_LCD does not support LCD_BED_LEVELING with PROBE_MANUALLY."
   #endif
-#elif ENABLED(DWIN_CREALITY_LCD_ENHANCED)
+#elif ENABLED(DWIN_LCD_PROUI)
   #if DISABLED(SDSUPPORT)
-    #error "DWIN_CREALITY_LCD_ENHANCED requires SDSUPPORT to be enabled."
+    #error "DWIN_LCD_PROUI requires SDSUPPORT to be enabled."
   #elif ENABLED(PID_EDIT_MENU)
-    #error "DWIN_CREALITY_LCD_ENHANCED does not support PID_EDIT_MENU."
+    #error "DWIN_LCD_PROUI does not support PID_EDIT_MENU."
   #elif ENABLED(PID_AUTOTUNE_MENU)
-    #error "DWIN_CREALITY_LCD_ENHANCED does not support PID_AUTOTUNE_MENU."
+    #error "DWIN_LCD_PROUI does not support PID_AUTOTUNE_MENU."
   #elif ENABLED(LEVEL_BED_CORNERS)
-    #error "DWIN_CREALITY_LCD_ENHANCED does not support LEVEL_BED_CORNERS."
+    #error "DWIN_LCD_PROUI does not support LEVEL_BED_CORNERS."
   #elif BOTH(LCD_BED_LEVELING, PROBE_MANUALLY)
-    #error "DWIN_CREALITY_LCD_ENHANCED does not support LCD_BED_LEVELING with PROBE_MANUALLY."
+    #error "DWIN_LCD_PROUI does not support LCD_BED_LEVELING with PROBE_MANUALLY."
   #endif
 #endif
 
@@ -3743,7 +3748,7 @@ static_assert(_PLUS_TEST(4), "HOMING_FEEDRATE_MM_M values must be positive.");
  * Sanity Check for Password Feature
  */
 #if ENABLED(PASSWORD_FEATURE)
-  #if NONE(HAS_LCD_MENU, PASSWORD_UNLOCK_GCODE, PASSWORD_CHANGE_GCODE)
+  #if NONE(HAS_MARLINUI_MENU, PASSWORD_UNLOCK_GCODE, PASSWORD_CHANGE_GCODE)
     #error "Without PASSWORD_UNLOCK_GCODE, PASSWORD_CHANGE_GCODE, or a supported LCD there's no way to unlock the printer or set a password."
   #elif DISABLED(EEPROM_SETTINGS)
     #warning "PASSWORD_FEATURE settings will be lost on power-off without EEPROM_SETTINGS."

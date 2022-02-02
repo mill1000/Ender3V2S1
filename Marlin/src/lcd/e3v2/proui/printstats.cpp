@@ -1,8 +1,8 @@
 /**
  * DWIN Print Stats page
  * Author: Miguel A. Risco-Castillo
- * Version: 1.1
- * Date: 2022/01/09
+ * Version: 1.2.0
+ * Date: 2022/01/27
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -21,7 +21,7 @@
 
 #include "../../../inc/MarlinConfigPre.h"
 
-#if BOTH(DWIN_CREALITY_LCD_ENHANCED, PRINTCOUNTER)
+#if BOTH(DWIN_LCD_PROUI, PRINTCOUNTER)
 
 #include "printstats.h"
 
@@ -43,7 +43,7 @@ void PrintStatsClass::Draw() {
   Title.ShowCaption(GET_TEXT_F(MSG_INFO_STATS_MENU));
   DWINUI::ClearMenuArea();
   Draw_Popup_Bkgd();
-  DWINUI::Draw_Icon(ICON_Continue_E, 86, 250);
+  DWINUI::Draw_IconWB(ICON_Continue_E, 86, 250);
   printStatistics ps = print_job_timer.getStats();
 
   sprintf_P(buf, PSTR(S_FMT ": %i"), GET_TEXT(MSG_INFO_PRINT_COUNT), ps.totalPrints);
@@ -65,4 +65,4 @@ void PrintStatsClass::Reset() {
   HMI_AudioFeedback();
 }
 
-#endif // DWIN_CREALITY_LCD_ENHANCED && PRINTCOUNTER
+#endif // DWIN_LCD_PROUI && PRINTCOUNTER

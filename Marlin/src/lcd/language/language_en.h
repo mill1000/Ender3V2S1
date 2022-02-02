@@ -46,7 +46,7 @@
 #define MEDIA_TYPE_EN "Media"
 
 namespace Language_en {
-  constexpr uint8_t    CHARSIZE                            = 2;
+  constexpr uint8_t CHARSIZE              = 2;
   LSTR LANGUAGE                           = _UxGT("English");
 
   // These strings should be translated
@@ -154,6 +154,7 @@ namespace Language_en {
   LSTR MSG_BED_LEVELING                   = _UxGT("Bed Leveling");
   LSTR MSG_LEVEL_BED                      = _UxGT("Level Bed");
   LSTR MSG_BED_TRAMMING                   = _UxGT("Bed Tramming");
+  LSTR MSG_BED_TRAMMING_MANUAL            = _UxGT("Manual Tramming");
   LSTR MSG_BED_TRAMMING_RAISE             = _UxGT("Adjust bed until the probe triggers.");
   LSTR MSG_BED_TRAMMING_IN_RANGE          = _UxGT("Corners within tolerance. Bed trammed.");
   LSTR MSG_BED_TRAMMING_GOOD_POINTS       = _UxGT("Good Points: ");

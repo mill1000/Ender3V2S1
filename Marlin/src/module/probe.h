@@ -29,6 +29,10 @@
 
 #include "motion.h"
 
+#if ENABLED(DWIN_LCD_PROUI)
+  #include "../lcd/e3v2/proui/dwin.h"
+#endif
+
 #if HAS_BED_PROBE
   enum ProbePtRaise : uint8_t {
     PROBE_PT_NONE,      // No raise or stow after run_z_probe
@@ -87,7 +91,7 @@ public:
         // Note: This won't work on SCARA since the probe offset rotates with the arm.
         static bool can_reach(const_float_t rx, const_float_t ry, const bool probe_relative=true) {
           if (probe_relative) {
-            return position_is_reachable(rx - offset_xy.x, ry - offset_xy.y) // The nozzle can go where it needs to go?
+          return position_is_reachable(rx - offset_xy.x, ry - offset_xy.y) // The nozzle can go where it needs to go?
                 && position_is_reachable(rx, ry, PROBING_MARGIN);            // Can the probe also go near there?
           }
           else {
@@ -113,10 +117,10 @@ public:
        */
       static bool can_reach(const_float_t rx, const_float_t ry, const bool probe_relative=true) {
         if (probe_relative) {
-          return position_is_reachable(rx - offset_xy.x, ry - offset_xy.y)
-              && COORDINATE_OKAY(rx, min_x() - fslop, max_x() + fslop)
-              && COORDINATE_OKAY(ry, min_y() - fslop, max_y() + fslop);
-        }
+        return position_is_reachable(rx - offset_xy.x, ry - offset_xy.y)
+            && COORDINATE_OKAY(rx, min_x() - fslop, max_x() + fslop)
+            && COORDINATE_OKAY(ry, min_y() - fslop, max_y() + fslop);
+      }
         else {
           return position_is_reachable(rx, ry)
               && COORDINATE_OKAY(rx + offset_xy.x, min_x() - fslop, max_x() + fslop)
@@ -188,30 +192,37 @@ public:
       }
     #endif
 
-    static constexpr float _min_x(const xy_pos_t &probe_offset_xy=offset_xy) {
+    #if ProUI
+      static float _min_x(const xy_pos_t &probe_offset_xy = offset_xy);
+      static float _max_x(const xy_pos_t &probe_offset_xy = offset_xy);
+      static float _min_y(const xy_pos_t &probe_offset_xy = offset_xy);
+      static float _max_y(const xy_pos_t &probe_offset_xy = offset_xy);
+    #else
+      static constexpr float _min_x(const xy_pos_t &probe_offset_xy = offset_xy) {
       return TERN(IS_KINEMATIC,
         (X_CENTER) - probe_radius(probe_offset_xy),
         _MAX((X_MIN_BED) + (PROBING_MARGIN_LEFT), (X_MIN_POS) + probe_offset_xy.x)
       );
     }
-    static constexpr float _max_x(const xy_pos_t &probe_offset_xy=offset_xy) {
+      static constexpr float _max_x(const xy_pos_t &probe_offset_xy = offset_xy) {
       return TERN(IS_KINEMATIC,
         (X_CENTER) + probe_radius(probe_offset_xy),
         _MIN((X_MAX_BED) - (PROBING_MARGIN_RIGHT), (X_MAX_POS) + probe_offset_xy.x)
       );
     }
-    static constexpr float _min_y(const xy_pos_t &probe_offset_xy=offset_xy) {
+      static constexpr float _min_y(const xy_pos_t &probe_offset_xy = offset_xy) {
       return TERN(IS_KINEMATIC,
         (Y_CENTER) - probe_radius(probe_offset_xy),
         _MAX((Y_MIN_BED) + (PROBING_MARGIN_FRONT), (Y_MIN_POS) + probe_offset_xy.y)
       );
     }
-    static constexpr float _max_y(const xy_pos_t &probe_offset_xy=offset_xy) {
+      static constexpr float _max_y(const xy_pos_t &probe_offset_xy = offset_xy) {
       return TERN(IS_KINEMATIC,
         (Y_CENTER) + probe_radius(probe_offset_xy),
         _MIN((Y_MAX_BED) - (PROBING_MARGIN_BACK), (Y_MAX_POS) + probe_offset_xy.y)
       );
     }
+    #endif
 
     static float min_x() { return _min_x() TERN_(NOZZLE_AS_PROBE, TERN_(HAS_HOME_OFFSET, - home_offset.x)); }
     static float max_x() { return _max_x() TERN_(NOZZLE_AS_PROBE, TERN_(HAS_HOME_OFFSET, - home_offset.x)); }
@@ -230,7 +241,7 @@ public:
       static constexpr xy_pos_t default_probe_xy_offset = xy_pos_t({ default_probe_xyz_offset.x,  default_probe_xyz_offset.y });
 
     public:
-      static constexpr bool can_reach(float x, float y) {
+      TERN(ProUI, static, static constexpr) bool can_reach(float x, float y) {
         #if IS_KINEMATIC
           return HYPOT2(x, y) <= sq(probe_radius(default_probe_xy_offset));
         #else
@@ -239,7 +250,7 @@ public:
         #endif
       }
 
-      static constexpr bool can_reach(const xy_pos_t &point) { return can_reach(point.x, point.y); }
+      TERN(ProUI, static, static constexpr) bool can_reach(const xy_pos_t &point) { return can_reach(point.x, point.y); }
     };
 
     #if NEEDS_THREE_PROBE_POINTS

@@ -1,8 +1,8 @@
 /**
  * DWIN End Stops diagnostic page
  * Author: Miguel A. Risco-Castillo
- * Version: 1.0.2
- * Date: 2021/11/06
+ * Version: 1.1.3
+ * Date: 2022/01/28
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -20,9 +20,8 @@
  */
 
 #include "../../../inc/MarlinConfigPre.h"
-#include "dwin_defines.h"
 
-#if BOTH(DWIN_CREALITY_LCD_ENHANCED, HAS_ESDIAG)
+#if BOTH(DWIN_LCD_PROUI, HAS_ESDIAG)
 
 #include "endstop_diag.h"
 
@@ -62,7 +61,7 @@ void ESDiagClass::Draw() {
   Title.ShowCaption(F("End-stops Diagnostic"));
   DWINUI::ClearMenuArea();
   Draw_Popup_Bkgd();
-  DWINUI::Draw_Icon(ICON_Continue_E, 86, 250);
+  DWINUI::Draw_IconWB(ICON_Continue_E, 86, 250);
   DWINUI::cursor.y = 80;
   #define ES_LABEL(S) draw_es_label(F(STR_##S))
   #if HAS_X_MIN
@@ -93,9 +92,9 @@ void ESDiagClass::Update() {
     ES_REPORT(Z_MIN);
   #endif
   #if HAS_FILAMENT_SENSOR
-    draw_es_state(READ(FIL_RUNOUT1_PIN) != FIL_RUNOUT1_STATE);
+    draw_es_state(READ(FIL_RUNOUT1_PIN) != TERN(ProUI, HMI_data.Runout_active_state, FIL_RUNOUT1_STATE));
   #endif
   DWIN_UpdateLCD();
 }
 
-#endif // DWIN_CREALITY_LCD_ENHANCED && HAS_ESDIAG
+#endif // DWIN_LCD_PROUI && HAS_ESDIAG

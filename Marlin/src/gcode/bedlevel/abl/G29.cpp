@@ -60,7 +60,7 @@
   #include "../../../lcd/extui/ui_api.h"
 #elif ENABLED(DWIN_CREALITY_LCD)
   #include "../../../lcd/e3v2/creality/dwin.h"
-#elif ENABLED(DWIN_CREALITY_LCD_ENHANCED)
+#elif ENABLED(DWIN_LCD_PROUI)
   #include "../../../lcd/e3v2/proui/dwin.h"
 #endif
 
@@ -102,7 +102,7 @@ public:
   #elif ENABLED(AUTO_BED_LEVELING_3POINT)
     static constexpr int abl_points = 3;
   #elif ABL_USES_GRID
-    static constexpr int abl_points = GRID_MAX_POINTS;
+    TERN(ProUI, const, static constexpr) int abl_points = GRID_MAX_POINTS;
   #endif
 
   #if ABL_USES_GRID
@@ -118,7 +118,11 @@ public:
       bool                topography_map;
       xy_uint8_t          grid_points;
     #else // Bilinear
-      static constexpr xy_uint8_t grid_points = { GRID_MAX_POINTS_X, GRID_MAX_POINTS_Y };
+      #if ProUI
+        xy_uint8_t grid_points = { HMI_data.grid_max_points, HMI_data.grid_max_points };
+      #else
+        static constexpr xy_uint8_t grid_points = { GRID_MAX_POINTS_X, GRID_MAX_POINTS_Y };
+      #endif
     #endif
 
     #if ENABLED(AUTO_BED_LEVELING_BILINEAR)
@@ -135,8 +139,10 @@ public:
 };
 
 #if ABL_USES_GRID && EITHER(AUTO_BED_LEVELING_3POINT, AUTO_BED_LEVELING_BILINEAR)
-  constexpr xy_uint8_t G29_State::grid_points;
-  constexpr int G29_State::abl_points;
+  #if !ProUI
+    constexpr xy_uint8_t G29_State::grid_points;
+    constexpr int G29_State::abl_points;
+  #endif
 #endif
 
 /**
@@ -411,7 +417,7 @@ G29_TYPE GcodeSuite::G29() {
       points[0].z = points[1].z = points[2].z = 0;  // Probe at 3 arbitrary points
     #elif ENABLED(AUTO_BED_LEVELING_BILINEAR)
       TERN_(EXTENSIBLE_UI, ExtUI::onMeshLevelingStart());
-      TERN_(DWIN_CREALITY_LCD_ENHANCED, DWIN_MeshLevelingStart());
+      TERN_(DWIN_LCD_PROUI, DWIN_MeshLevelingStart());
     #endif
 
     if (!faux) {
@@ -614,6 +620,8 @@ G29_TYPE GcodeSuite::G29() {
 
         int8_t inStart, inStop, inInc;
 
+        TERN_(ProUI, if (HMI_flag.cancel_abl) break; )
+
         if (zig) {                      // Zig away from origin
           inStart = 0;                  // Left or front
           inStop = PR_INNER_SIZE;       // Right or back
@@ -675,6 +683,7 @@ G29_TYPE GcodeSuite::G29() {
 
           abl.reenable = false;
           idle_no_sleep();
+          TERN_(ProUI, if (HMI_flag.cancel_abl) break; )
 
         } // inner
       } // outer

@@ -21,7 +21,7 @@
 
 #include "../../../inc/MarlinConfigPre.h"
 
-#if ENABLED(DWIN_CREALITY_LCD_ENHANCED)
+#if ENABLED(DWIN_LCD_PROUI)
 
 #include "../../../inc/MarlinConfig.h"
 
@@ -109,7 +109,7 @@ void DWIN_WriteToMem(uint8_t mem, uint16_t addr, uint16_t length, uint8_t *data)
   uint16_t to_send;
   uint16_t indx;
   uint8_t block = 0;
-
+  
   while (pending > 0) {
     indx = block * max_size;
     to_send = _MIN(pending, max_size);
@@ -123,7 +123,7 @@ void DWIN_WriteToMem(uint8_t mem, uint16_t addr, uint16_t length, uint8_t *data)
     LOOP_L_N(j, 4) { LCD_SERIAL.write(DWIN_BufTail[j]); delayMicroseconds(1); }
     block++;
     pending -= to_send;
-  }
+  } 
 }
 
 // Write the contents of the 32KB SRAM data memory into the designated image memory space.
@@ -140,13 +140,13 @@ void DWIN_SRAMToPic(uint8_t picID) {
 //--------------------------Test area -------------------------
 
 //void DWIN_ReadSRAM(uint16_t addr, uint8_t length, const char * const data) {
-//   size_t i = 0;
-//   DWIN_Byte(i, 0x32);
-//   DWIN_Byte(i, 0x5A);  // 0x5A Read from SRAM - 0xA5 Read from Flash
-//   DWIN_Word(i, addr);  // 0x0000 to 0x7FFF
-//   const size_t len = _MIN(0xF0, length);
-//   DWIN_Byte(i, len);
-//   DWIN_Send(i);
+//  size_t i = 0;
+//  DWIN_Byte(i, 0x32);
+//  DWIN_Byte(i, 0x5A);  // 0x5A Read from SRAM - 0xA5 Read from Flash
+//  DWIN_Word(i, addr);  // 0x0000 to 0x7FFF
+//  const size_t len = _MIN(0xF0, length);
+//  DWIN_Byte(i, len);
+//  DWIN_Send(i);
 //}
 
-#endif // DWIN_CREALITY_LCD_ENHANCED
+#endif // DWIN_LCD_PROUI

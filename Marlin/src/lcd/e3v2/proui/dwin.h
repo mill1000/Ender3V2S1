@@ -1,10 +1,8 @@
 /**
  * Enhanced DWIN implementation
  * authors: Miguel A. Risco-Castillo (MRISCOC)
- * version: 3.9.2
- * date: 2021/11/21
- *
- * Based on the original code provided by Creality
+ * Version: 3.11.3
+ * Date: 2022/01/28
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -71,7 +69,7 @@ enum processID : uint8_t {
   NothingToDo,
 };
 
-enum pidresult_t : uint8_t {
+enum pidresult_t : uint8_t { 
   PID_BAD_EXTRUDER_NUM,
   PID_TEMP_TOO_HIGH,
   PID_TUNING_TIMEOUT,
@@ -85,7 +83,6 @@ enum pidresult_t : uint8_t {
 
 typedef struct {
   int8_t Color[3];                    // Color components
-  uint16_t pidgrphpoints  = 0;
   pidresult_t pidresult   = PID_DONE;
   int8_t Preheat          = 0;        // Material Select 0: PLA, 1: ABS, 2: Custom
   AxisEnum axis           = X_AXIS;   // Axis Select
@@ -100,13 +97,18 @@ typedef struct {
 } HMI_value_t;
 
 typedef struct {
-  uint8_t language;
+  bool remain_flag:1;   // remain was override by M73
   bool pause_flag:1;    // printing is paused
   bool pause_action:1;  // flag a pause action
+  bool abort_flag:1;    // printing is aborting
+  bool abort_action:1;  // flag a aborting action
   bool print_finish:1;  // print was finished
   bool select_flag:1;   // Popup button selected
   bool home_flag:1;     // homing in course
   bool heat_flag:1;     // 0: heating done  1: during heating
+  #if ProUI && HAS_LEVELING
+    bool cancel_abl:1;   // cancel current abl
+  #endif
 } HMI_flag_t;
 
 extern HMI_value_t HMI_value;
@@ -138,22 +140,23 @@ void Goto_ConfirmToPrint();
 void Draw_Status_Area(const bool with_update); // Status Area
 void Draw_Main_Area();      // Redraw main area;
 void DWIN_Redraw_screen();  // Redraw all screen elements
-void HMI_StartFrame(const bool with_update);   // Prepare the menu view
 void HMI_MainMenu();        // Main process screen
 void HMI_SelectFile();      // File page
 void HMI_Printing();        // Print page
 void HMI_ReturnScreen();    // Return to previous screen before popups
 void ApplyExtMinT();
-void HMI_SetLanguageCache(); // Set the languaje image cache
+void RebootPrinter();
+#if ENABLED(BAUD_RATE_GCODE)
+  void SetBaud115K();
+  void SetBaud250K();
+#endif
 
-void HMI_Init();
-void HMI_Popup();
+void HMI_WaitForUser();
 void HMI_SaveProcessID(const uint8_t id);
 void HMI_AudioFeedback(const bool success=true);
 void EachMomentUpdate();
 void update_variable();
 void DWIN_HandleScreen();
-void DWIN_Update();
 void DWIN_CheckStatusMessage();
 void DWIN_StartHoming();
 void DWIN_CompletedHoming();
@@ -164,21 +167,28 @@ void DWIN_MeshLevelingStart();
 void DWIN_CompletedLeveling();
 void DWIN_PidTuning(pidresult_t result);
 void DWIN_Print_Started(const bool sd = false);
+void DWIN_Print_Pause();
+void DWIN_Print_Resume();
 void DWIN_Print_Finished();
+void DWIN_Print_Aborted();
 #if HAS_FILAMENT_SENSOR
   void DWIN_FilamentRunout(const uint8_t extruder);
 #endif
 void DWIN_Progress_Update();
 void DWIN_Print_Header(const char *text);
 void DWIN_SetColorDefaults();
+void DWIN_ApplyColor();
+void DWIN_ApplyColor(const int8_t element, const bool ldef = false);
 void DWIN_StoreSettings(char *buff);
 void DWIN_LoadSettings(const char *buff);
 void DWIN_SetDataDefaults();
 void DWIN_RebootScreen();
+void DWIN_Gcode(const int16_t codenum);
 
 #if ENABLED(ADVANCED_PAUSE_FEATURE)
+  void DWIN_Popup_Pause(FSTR_P const fmsg, uint8_t button = 0);
   void Draw_Popup_FilamentPurge();
-  void DWIN_Popup_FilamentPurge();
+  void Goto_FilamentPurge();
   void HMI_FilamentPurge();
 #endif
 
@@ -198,6 +208,15 @@ void HMI_LockScreen();
 #if ENABLED(PRINTCOUNTER)
   void Draw_PrintStats();
 #endif
+
+// Menu auxiliary functions
+void SetOnClick(uint8_t process, const int32_t lo, const int32_t hi, uint8_t dp, const int32_t val, void (*Apply)() = nullptr, void (*LiveUpdate)() = nullptr);
+void SetValueOnClick(uint8_t process, const int32_t lo, const int32_t hi, const int32_t val, void (*Apply)() = nullptr, void (*LiveUpdate)() = nullptr);
+void SetValueOnClick(uint8_t process, const float lo, const float hi, uint8_t dp, const float val, void (*Apply)() = nullptr, void (*LiveUpdate)() = nullptr);
+inline void SetIntOnClick(const int32_t lo, const int32_t hi, const int32_t val, void (*Apply)() = nullptr, void (*LiveUpdate)() = nullptr);
+void SetPIntOnClick(const int32_t lo, const int32_t hi, void (*Apply)() = nullptr, void (*LiveUpdate)() = nullptr);
+inline void SetFloatOnClick(const float lo, const float hi, uint8_t dp, const float val, void (*Apply)() = nullptr, void (*LiveUpdate)() = nullptr);
+void SetPFloatOnClick(const float lo, const float hi, uint8_t dp, void (*Apply)() = nullptr, void (*LiveUpdate)() = nullptr);
 
 // HMI user control functions
 void HMI_Menu();
@@ -257,4 +276,8 @@ void Draw_Steps_Menu();
 #endif
 #if ENABLED(INDIVIDUAL_AXIS_HOMING_SUBMENU)
   void Draw_Homing_Menu();
+#endif
+
+#if DEBUG_DWIN
+  void DWIN_Debug(const char *msg);
 #endif

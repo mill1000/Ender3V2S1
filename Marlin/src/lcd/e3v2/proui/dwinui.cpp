@@ -1,11 +1,11 @@
 /**
  * DWIN UI Enhanced implementation
  * Author: Miguel A. Risco-Castillo
- * Version: 3.8.2
- * Date: 2021/11/09
+ * Version: 3.12.1
+ * Date: 2022/01/30
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as
+ * it under the terms of the GNU Lesser General Public License as 
  * published by the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
@@ -22,12 +22,11 @@
 
 #include "../../../inc/MarlinConfigPre.h"
 
-#if ENABLED(DWIN_CREALITY_LCD_ENHANCED)
+#if ENABLED(DWIN_LCD_PROUI)
 
 #include "../../../inc/MarlinConfig.h"
 #include "dwin_lcd.h"
 #include "dwinui.h"
-#include "dwin_defines.h"
 
 //#define DEBUG_OUT 1
 #include "../../../core/debug_out.h"
@@ -44,6 +43,8 @@ uint16_t DWINUI::textcolor = Def_Text_Color;
 uint16_t DWINUI::backcolor = Def_Background_Color;
 uint8_t  DWINUI::font = font8x16;
 
+const char * DWINUI::Author = &STRING_CONFIG_H_AUTHOR[0];
+
 void (*DWINUI::onCursorErase)(const int8_t line)=nullptr;
 void (*DWINUI::onCursorDraw)(const int8_t line)=nullptr;
 void (*DWINUI::onTitleDraw)(TitleClass* title)=nullptr;
@@ -51,7 +52,7 @@ void (*DWINUI::onMenuDraw)(MenuClass* menu)=nullptr;
 
 void DWINUI::init() {
   DEBUG_ECHOPGM("\r\nDWIN handshake ");
-  delay(750);   // Delay here or init later in the boot process
+  delay(750);   // Delay for wait to wakeup screen
   const bool success = DWIN_Handshake();
   if (success) DEBUG_ECHOLNPGM("ok."); else DEBUG_ECHOLNPGM("error.");
   DWIN_Frame_SetDir(1);
@@ -188,7 +189,7 @@ void DWINUI::Draw_String(uint16_t color, const char * const string, uint16_t rli
 //  value: Float value
 void DWINUI::Draw_Signed_Float(uint8_t bShow, bool zeroFill, uint8_t zeroMode, uint8_t size, uint16_t color, uint16_t bColor, uint8_t iNum, uint8_t fNum, uint16_t x, uint16_t y, float value) {
   DWIN_Draw_FloatValue(bShow, zeroFill, zeroMode, size, color, bColor, iNum, fNum, x, y, value < 0 ? -value : value);
-  DWIN_Draw_String(bShow, size, color, bColor, x - 6, y, value < 0 ? F("-") : F(" "));
+  DWIN_Draw_String(bShow, size, color, bColor, x - 8, y, value < 0 ? F("-") : F(" "));
 }
 
 // Draw a circle
@@ -444,4 +445,4 @@ MenuItemPtrClass::MenuItemPtrClass(uint8_t cicon, const char * const text, void 
   value = val;
 };
 
-#endif // DWIN_CREALITY_LCD_ENHANCED
+#endif // DWIN_LCD_PROUI

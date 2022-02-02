@@ -28,6 +28,7 @@ extern xy_float_t bilinear_grid_factor;
 extern bed_mesh_t z_values;
 float bilinear_z_offset(const xy_pos_t &raw);
 
+void extrapolate_one_point(const uint8_t x, const uint8_t y, const int8_t xdir, const int8_t ydir);
 void extrapolate_unprobed_bed_level();
 void print_bilinear_leveling_grid();
 void refresh_bed_level();

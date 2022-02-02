@@ -1,8 +1,8 @@
 /**
  * DWIN Mesh Viewer
  * Author: Miguel A. Risco-Castillo
- * version: 3.9.1
- * Date: 2021/11/09
+ * version: 3.10.1
+ * Date: 2022/01/28
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -21,7 +21,7 @@
 
 #include "../../../inc/MarlinConfigPre.h"
 
-#if BOTH(DWIN_CREALITY_LCD_ENHANCED, HAS_MESH)
+#if BOTH(DWIN_LCD_PROUI, HAS_MESH)
 
 #include "meshviewer.h"
 
@@ -55,7 +55,7 @@ void MeshViewerClass::Draw() {
   }
   Title.ShowCaption(F("Mesh Viewer"));
   DWINUI::ClearMenuArea();
-  DWINUI::Draw_Icon(ICON_Continue_E, 86, 305);
+  DWINUI::Draw_IconWB(ICON_Continue_E, 86, 305);
   DWIN_Draw_Rectangle(0, HMI_data.SplitLine_Color, px(0), py(0), px(GRID_MAX_POINTS_X - 1), py(GRID_MAX_POINTS_Y - 1));
   LOOP_S_L_N(x, 1, GRID_MAX_POINTS_X - 1) DrawMeshVLine(x);
   LOOP_S_L_N(y, 1, GRID_MAX_POINTS_Y - 1) DrawMeshHLine(y);
@@ -71,19 +71,19 @@ void MeshViewerClass::Draw() {
         char str_1[9];
         str_1[0] = 0;
         switch (zmesh[x][y]) {
-          case -999 ... -100: 
+          case -999 ... -100:
             DWINUI::Draw_Signed_Float(font6x12, 1, 1, px(x) - 12, py(y) - 6, Z_VALUES(x,y));
             break;
-          case -99 ... -1: 
+          case -99 ... -1:
             sprintf_P(str_1, PSTR("-.%02i"), -zmesh[x][y]);
             break;
           case 0:
             DWIN_Draw_String(false, font6x12, DWINUI::textcolor, DWINUI::backcolor, px(x) - 4, py(y) - 6, "0");;
             break;
-          case 1 ... 99: 
+          case 1 ... 99:
             sprintf_P(str_1, PSTR(".%02i"), zmesh[x][y]);
             break;
-          case 100 ... 999: 
+          case 100 ... 999:
             DWINUI::Draw_Signed_Float(font6x12, 1, 1, px(x) - 12, py(y) - 6, Z_VALUES(x,y));
             break;
         }
@@ -99,4 +99,4 @@ void MeshViewerClass::Draw() {
   );
 }
 
-#endif // DWIN_CREALITY_LCD_ENHANCED && HAS_MESH
+#endif // DWIN_LCD_PROUI && HAS_MESH
