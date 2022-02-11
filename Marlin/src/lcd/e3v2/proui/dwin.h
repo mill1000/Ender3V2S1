@@ -1,8 +1,8 @@
 /**
  * Enhanced DWIN implementation
  * authors: Miguel A. Risco-Castillo (MRISCOC)
- * Version: 3.11.3
- * Date: 2022/01/28
+ * Version: 3.12.3
+ * Date: 2022/02/08
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -156,6 +156,7 @@ void HMI_SaveProcessID(const uint8_t id);
 void HMI_AudioFeedback(const bool success=true);
 void EachMomentUpdate();
 void update_variable();
+void DWIN_InitScreen();
 void DWIN_HandleScreen();
 void DWIN_CheckStatusMessage();
 void DWIN_StartHoming();

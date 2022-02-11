@@ -23,7 +23,8 @@ Precompiled binary files can be downloader from:
 ## Community links
 * Telegram
 * [Reddit](https://www.reddit.com/r/Ender3v2Firmware) 
-* [Facebook](https://www.facebook.com/groups/ender3v2firmware)
+* [Ender 3V2 Facebook](https://www.facebook.com/groups/ender3v2firmware)
+* [Ender 3S1 Facebook](https://www.facebook.com/groups/ender3s1printer)
 
 ![](https://raw.githubusercontent.com/mriscoc/Ender3V2S1/Ender3V2S1-Released/screenshots/main.jpg)
 

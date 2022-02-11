@@ -94,7 +94,7 @@ namespace Language_en {
   LSTR MSG_ITERATION                      = _UxGT("G34 Iteration: %i");
   LSTR MSG_DECREASING_ACCURACY            = _UxGT("Accuracy Decreasing!");
   LSTR MSG_ACCURACY_ACHIEVED              = _UxGT("Accuracy Achieved");
-  LSTR MSG_LEVEL_BED_HOMING               = _UxGT("Homing XYZ");
+  LSTR MSG_LEVEL_BED_HOMING               = _UxGT("Homing Axes");
   LSTR MSG_LEVEL_BED_WAITING              = _UxGT("Click to Begin");
   LSTR MSG_LEVEL_BED_NEXT_POINT           = _UxGT("Next Point");
   LSTR MSG_LEVEL_BED_DONE                 = _UxGT("Leveling Done!");
@@ -407,6 +407,7 @@ namespace Language_en {
   LSTR MSG_ADVANCE_K_E                    = _UxGT("Advance K *");
   LSTR MSG_CONTRAST                       = _UxGT("LCD Contrast");
   LSTR MSG_BRIGHTNESS                     = _UxGT("LCD Brightness");
+  LSTR MSG_BRIGHTNESS_OFF                 = _UxGT("Turn Off LCD");
   LSTR MSG_STORE_EEPROM                   = _UxGT("Store Settings");
   LSTR MSG_LOAD_EEPROM                    = _UxGT("Load Settings");
   LSTR MSG_RESTORE_DEFAULTS               = _UxGT("Restore Defaults");
@@ -490,6 +491,8 @@ namespace Language_en {
   LSTR MSG_PHY_SET                        = _UxGT("Physical settings");
   LSTR MSG_PHY_XBEDSIZE                   = _UxGT("X bed size");
   LSTR MSG_PHY_YBEDSIZE                   = _UxGT("Y bed size");
+  LSTR MSG_PHY_XMINPOS                    = _UxGT("X min position");
+  LSTR MSG_PHY_YMINPOS                    = _UxGT("Y min position");
   LSTR MSG_PHY_XMAXPOS                    = _UxGT("X max position");
   LSTR MSG_PHY_YMAXPOS                    = _UxGT("Y max position");
   LSTR MSG_PHY_ZMAXPOS                    = _UxGT("Z max position");

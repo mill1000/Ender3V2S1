@@ -107,10 +107,13 @@ typedef struct {
   #if ENABLED(PREVENT_COLD_EXTRUSION)
     int16_t ExtMinT = EXTRUDE_MINTEMP;
   #endif
+  #if ENABLED(PREHEAT_BEFORE_LEVELING) && defined(PREHEAT_1_TEMP_BED)
+    int16_t BedLevT = PREHEAT_1_TEMP_BED;
+  #endif
   TERN_(BAUD_RATE_GCODE, bool Baud115K = false);
   #if PREHEAT_1_TEMP_BED
     #undef LEVELING_BED_TEMP
-    #define LEVELING_BED_TEMP HMI_data.BedPidT
+    #define LEVELING_BED_TEMP HMI_data.BedLevT
   #endif
   #if ProUI
     TERN_(HAS_FILAMENT_SENSOR, bool Runout_active_state = FIL_RUNOUT_STATE);
@@ -119,6 +122,8 @@ typedef struct {
   #endif
   int16_t x_bed_size = DEF_X_BED_SIZE;
   int16_t y_bed_size = DEF_Y_BED_SIZE;
+    int16_t x_min_pos = DEF_X_MIN_POS;
+    int16_t y_min_pos = DEF_Y_MIN_POS;
   int16_t x_max_pos = DEF_X_MAX_POS;
   int16_t y_max_pos = DEF_Y_MAX_POS;
   int16_t z_max_pos = DEF_Z_MAX_POS;
@@ -139,6 +144,8 @@ extern HMI_data_t HMI_data;
 #if ProUI
 #undef X_BED_SIZE
 #undef Y_BED_SIZE
+  #undef X_MIN_POS
+  #undef Y_MIN_POS
 #undef X_MAX_POS
 #undef Y_MAX_POS
 #undef Z_MAX_POS
@@ -156,6 +163,8 @@ extern HMI_data_t HMI_data;
 
 #define X_BED_SIZE (float)HMI_data.x_bed_size
 #define Y_BED_SIZE (float)HMI_data.y_bed_size
+  #define X_MIN_POS  (float)HMI_data.x_min_pos
+  #define Y_MIN_POS  (float)HMI_data.y_min_pos
 #define X_MAX_POS  (float)HMI_data.x_max_pos
 #define Y_MAX_POS  (float)HMI_data.y_max_pos
 #define Z_MAX_POS  (float)HMI_data.z_max_pos
@@ -170,4 +179,5 @@ extern HMI_data_t HMI_data;
   #define Z_PROBE_FEEDRATE_SLOW HMI_data.zprobefeedslow
 #endif
 #define INVERT_E0_DIR HMI_data.Invert_E0
+
 #endif

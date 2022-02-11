@@ -5,7 +5,7 @@
   
 ## How to install
   
-[**Click to Download**](https://downgit.github.io/#/home?url=https://github.com/mriscoc/Marlin_Ender3v2/tree/Ender3v2-Released/display%20assets/Giadej%20compilation/DWIN_SET)  
+[**Click to Download**](https://downgit.github.io/#/home?url=https://github.com/mriscoc/Ender3V2S1/tree/Ender3V2S1-Released/display%20assets/Giadej%20compilation/DWIN_SET)  
   
 1. Get an µSD card of 8GB or less.
 1. Format the µSD card MBR, FAT32 and with a 4 KB sector size
@@ -52,6 +52,6 @@ Be sure to leave **only** the `DWIN_SET` folder at the root of the card.
 ---
 
 ### Updating printer firmware
-For update your printer firmware and get the latest version go here: <https://github.com/mriscoc/Marlin_Ender3v2/releases/latest>  
+For update your printer firmware and get the latest version go here: <https://github.com/mriscoc/Ender3V2S1/releases/latest>  
 
 

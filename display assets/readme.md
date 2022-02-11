@@ -1,5 +1,5 @@
 # Display firmware, boot image and icons compilations
-This page list the display assets compilations compatible with [MRISCOC's](https://github.com/mriscoc/Ender3V2S1/releases/latest) firmware fork.
+This page list the display assets compilations compatible with [MRISCOC's](https://github.com/mriscoc/Ender3V2S1/releases/latest) firmware fork. Currently this icon assets only apply to the Ender 3V2 original display, some newer displays or the display of the Ender 3S1 are not compatible.
 
 ## How to install
 1. Get an µSD card of 8GB or less.

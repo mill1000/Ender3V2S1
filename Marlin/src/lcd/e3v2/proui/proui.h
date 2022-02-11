@@ -36,21 +36,23 @@
 
 #define X_BED_MIN 150
 #define Y_BED_MIN 150
-#define DEF_X_BED_SIZE X_BED_SIZE
-#define DEF_Y_BED_SIZE Y_BED_SIZE
-#define DEF_X_MAX_POS X_MAX_POS
-#define DEF_Y_MAX_POS Y_MAX_POS
-#define DEF_Z_MAX_POS Z_MAX_POS
+constexpr int16_t DEF_X_BED_SIZE = X_BED_SIZE;
+constexpr int16_t DEF_Y_BED_SIZE = Y_BED_SIZE;
+constexpr int16_t DEF_X_MIN_POS = X_MIN_POS;
+constexpr int16_t DEF_Y_MIN_POS = Y_MIN_POS;
+constexpr int16_t DEF_X_MAX_POS = X_MAX_POS;
+constexpr int16_t DEF_Y_MAX_POS = Y_MAX_POS;
+constexpr int16_t DEF_Z_MAX_POS = Z_MAX_POS;
 #define DEF_NOZZLE_PARK_POINT {240, 220, 20}
 #if HAS_MESH
-  #define DEF_GRID_MAX_POINTS GRID_MAX_POINTS_X
+  constexpr int8_t DEF_GRID_MAX_POINTS = GRID_MAX_POINTS_X;
   #define GRID_LIMIT 9
 #endif
 #if HAS_BED_PROBE
-  #define DEF_PROBING_MARGIN PROBING_MARGIN
+  constexpr int16_t DEF_PROBING_MARGIN = PROBING_MARGIN;
   #define MIN_PROBE_MARGIN 10
   #define MAX_PROBE_MARGIN 60
-  #define DEF_Z_PROBE_FEEDRATE_SLOW (Z_PROBE_FEEDRATE_FAST / 2)
+  constexpr int16_t DEF_Z_PROBE_FEEDRATE_SLOW = (Z_PROBE_FEEDRATE_FAST / 2);
 #endif
 #define DEF_INVERT_E0_DIR false
 #define DEF_FIL_MOTION_SENSOR false
@@ -79,6 +81,7 @@ public:
   static void ApplyMeshPoints();
   static void C29();
 #endif
+  static void C100();
   static void C101();
   static void C102();
 #if ENABLED(NOZZLE_PARK_FEATURE)
@@ -88,6 +91,7 @@ public:
 #if HAS_BED_PROBE
   static void C851();
 #endif
+  static void UpdateAxis(const AxisEnum axis);
   static void ApplyPhySet();
   static void SetDefaults();
   static void LoadSettings();

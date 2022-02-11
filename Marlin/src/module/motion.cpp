@@ -704,8 +704,11 @@ void restore_feedrate_and_scaling() {
     OPTARG(HAS_HOTEND_OFFSET, const uint8_t old_tool_index/*=0*/, const uint8_t new_tool_index/*=0*/)
   ) {
 
-    #if ENABLED(DUAL_X_CARRIAGE)
+    #if ProUI
 
+      ProEx.UpdateAxis(axis);
+
+    #elif ENABLED(DUAL_X_CARRIAGE)
       if (axis == X_AXIS) {
 
         // In Dual X mode hotend_offset[X] is T1's home position
