@@ -27,6 +27,10 @@
 #include "../gcode.h"
 #include "../../module/temperature.h"
 
+#if ENABLED(DWIN_LCD_PROUI)
+  #include "../../lcd/e3v2/proui/dwin_defines.h"
+#endif
+
 /**
  * M302: Allow cold extrudes, or set the minimum extrude temperature
  *

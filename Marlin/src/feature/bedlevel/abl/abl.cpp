@@ -104,40 +104,40 @@ void extrapolate_unprobed_bed_level() {
   #if ProUI
     ProEx.abl_extrapolate();
   #else
-  #ifdef HALF_IN_X
-    constexpr uint8_t ctrx2 = 0, xend = GRID_MAX_POINTS_X - 1;
+    #ifdef HALF_IN_X
+      constexpr uint8_t ctrx2 = 0, xend = GRID_MAX_POINTS_X - 1;
     #else
       constexpr uint8_t ctrx1 = (GRID_MAX_CELLS_X) / 2, // left-of-center
                         ctrx2 = (GRID_MAX_POINTS_X) / 2,  // right-of-center
-                      xend = ctrx1;
-  #endif
+                        xend = ctrx1;
+    #endif
 
-  #ifdef HALF_IN_Y
-    constexpr uint8_t ctry2 = 0, yend = GRID_MAX_POINTS_Y - 1;
+    #ifdef HALF_IN_Y
+      constexpr uint8_t ctry2 = 0, yend = GRID_MAX_POINTS_Y - 1;
     #else
       constexpr uint8_t ctry1 = (GRID_MAX_CELLS_Y) / 2, // top-of-center
                         ctry2 = (GRID_MAX_POINTS_Y) / 2,  // bottom-of-center
-                      yend = ctry1;
-  #endif
+                        yend = ctry1;
+    #endif
 
-  LOOP_LE_N(xo, xend)
-    LOOP_LE_N(yo, yend) {
-      uint8_t x2 = ctrx2 + xo, y2 = ctry2 + yo;
-      #ifndef HALF_IN_X
-        const uint8_t x1 = ctrx1 - xo;
-      #endif
-      #ifndef HALF_IN_Y
-        const uint8_t y1 = ctry1 - yo;
+    LOOP_LE_N(xo, xend)
+      LOOP_LE_N(yo, yend) {
+        uint8_t x2 = ctrx2 + xo, y2 = ctry2 + yo;
         #ifndef HALF_IN_X
-          extrapolate_one_point(x1, y1, +1, +1);   //  left-below + +
+          const uint8_t x1 = ctrx1 - xo;
         #endif
-        extrapolate_one_point(x2, y1, -1, +1);     // right-below - +
-      #endif
-      #ifndef HALF_IN_X
-        extrapolate_one_point(x1, y2, +1, -1);     //  left-above + -
-      #endif
-      extrapolate_one_point(x2, y2, -1, -1);       // right-above - -
-    }
+        #ifndef HALF_IN_Y
+          const uint8_t y1 = ctry1 - yo;
+          #ifndef HALF_IN_X
+            extrapolate_one_point(x1, y1, +1, +1);   //  left-below + +
+          #endif
+          extrapolate_one_point(x2, y1, -1, +1);     // right-below - +
+        #endif
+        #ifndef HALF_IN_X
+          extrapolate_one_point(x1, y2, +1, -1);     //  left-above + -
+        #endif
+        extrapolate_one_point(x2, y2, -1, -1);       // right-above - -
+      }
   #endif
 }
 

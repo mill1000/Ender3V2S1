@@ -1,8 +1,8 @@
 /**
  * Enhanced DWIN implementation
  * authors: Miguel A. Risco-Castillo (MRISCOC)
- * Version: 3.12.3
- * Date: 2022/02/08
+ * Version: 3.14.3
+ * Date: 2022/02/17
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -86,14 +86,6 @@ typedef struct {
   pidresult_t pidresult   = PID_DONE;
   int8_t Preheat          = 0;        // Material Select 0: PLA, 1: ABS, 2: Custom
   AxisEnum axis           = X_AXIS;   // Axis Select
-  int32_t MaxValue        = 0;        // Auxiliar max integer/scaled float value
-  int32_t MinValue        = 0;        // Auxiliar min integer/scaled float value
-  int8_t dp               = 0;        // Auxiliar decimal places
-  int32_t Value           = 0;        // Auxiliar integer / scaled float value
-  int16_t *P_Int          = nullptr;  // Auxiliar pointer to 16 bit integer variable
-  float *P_Float          = nullptr;  // Auxiliar pointer to float variable
-  void (*Apply)()         = nullptr;  // Auxiliar apply function
-  void (*LiveUpdate)()    = nullptr;  // Auxiliar live update function
 } HMI_value_t;
 
 typedef struct {
@@ -107,7 +99,7 @@ typedef struct {
   bool home_flag:1;     // homing in course
   bool heat_flag:1;     // 0: heating done  1: during heating
   #if ProUI && HAS_LEVELING
-    bool cancel_abl:1;   // cancel current abl
+    bool cancel_abl:1;  // cancel current abl
   #endif
 } HMI_flag_t;
 
@@ -137,7 +129,7 @@ void Goto_Main_Menu();
 void Goto_Info_Menu();
 void Goto_PowerLossRecovery();
 void Goto_ConfirmToPrint();
-void Draw_Status_Area(const bool with_update); // Status Area
+void DWIN_Draw_Dashboard(const bool with_update); // Status Area
 void Draw_Main_Area();      // Redraw main area;
 void DWIN_Redraw_screen();  // Redraw all screen elements
 void HMI_MainMenu();        // Main process screen
@@ -209,23 +201,6 @@ void HMI_LockScreen();
 #if ENABLED(PRINTCOUNTER)
   void Draw_PrintStats();
 #endif
-
-// Menu auxiliary functions
-void SetOnClick(uint8_t process, const int32_t lo, const int32_t hi, uint8_t dp, const int32_t val, void (*Apply)() = nullptr, void (*LiveUpdate)() = nullptr);
-void SetValueOnClick(uint8_t process, const int32_t lo, const int32_t hi, const int32_t val, void (*Apply)() = nullptr, void (*LiveUpdate)() = nullptr);
-void SetValueOnClick(uint8_t process, const float lo, const float hi, uint8_t dp, const float val, void (*Apply)() = nullptr, void (*LiveUpdate)() = nullptr);
-inline void SetIntOnClick(const int32_t lo, const int32_t hi, const int32_t val, void (*Apply)() = nullptr, void (*LiveUpdate)() = nullptr);
-void SetPIntOnClick(const int32_t lo, const int32_t hi, void (*Apply)() = nullptr, void (*LiveUpdate)() = nullptr);
-inline void SetFloatOnClick(const float lo, const float hi, uint8_t dp, const float val, void (*Apply)() = nullptr, void (*LiveUpdate)() = nullptr);
-void SetPFloatOnClick(const float lo, const float hi, uint8_t dp, void (*Apply)() = nullptr, void (*LiveUpdate)() = nullptr);
-
-// HMI user control functions
-void HMI_Menu();
-void HMI_SetInt();
-void HMI_SetPInt();
-void HMI_SetIntNoDraw();
-void HMI_SetFloat();
-void HMI_SetPFloat();
 
 // Menu drawing functions
 void Draw_Control_Menu();

@@ -69,7 +69,7 @@
 #ifndef HAS_LCD_BRIGHTNESS
   #define HAS_LCD_BRIGHTNESS 1
 #endif
-#define DEFAULT_LCD_BRIGHTNESS 127
+#define LCD_BRIGHTNESS_DEFAULT 127
 #ifndef SOUND_MENU_ITEM
   #define SOUND_MENU_ITEM
 #endif
@@ -94,14 +94,14 @@ typedef struct {
   uint16_t Barfill_Color = Def_Barfill_Color;
   uint16_t Indicator_Color = Def_Indicator_Color;
   uint16_t Coordinate_Color = Def_Coordinate_Color;
-//
-  #if defined(PREHEAT_1_TEMP_HOTEND) && HAS_HOTEND
+  // Temperatures
+  #if HAS_HOTEND && defined(PREHEAT_1_TEMP_HOTEND)
     int16_t HotendPidT = PREHEAT_1_TEMP_HOTEND;
   #endif
-  #if defined(PREHEAT_1_TEMP_BED) //&& HAS_HEATED_BED
+  #if defined(PREHEAT_1_TEMP_BED)
     int16_t BedPidT = PREHEAT_1_TEMP_BED;
   #endif
-  #if ANY(HAS_HOTEND, HAS_HEATED_BED)
+  #if HAS_HOTEND || HAS_HEATED_BED
     int16_t PidCycles = 10;
   #endif
   #if ENABLED(PREVENT_COLD_EXTRUSION)
@@ -111,73 +111,74 @@ typedef struct {
     int16_t BedLevT = PREHEAT_1_TEMP_BED;
   #endif
   TERN_(BAUD_RATE_GCODE, bool Baud115K = false);
-  #if PREHEAT_1_TEMP_BED
-    #undef LEVELING_BED_TEMP
-    #define LEVELING_BED_TEMP HMI_data.BedLevT
-  #endif
+  bool FullManualTramming = false;
   #if ProUI
     TERN_(HAS_FILAMENT_SENSOR, bool Runout_active_state = FIL_RUNOUT_STATE);
-  #if ENABLED(NOZZLE_PARK_FEATURE)
-    xyz_int_t Park_point = DEF_NOZZLE_PARK_POINT;
-  #endif
-  int16_t x_bed_size = DEF_X_BED_SIZE;
-  int16_t y_bed_size = DEF_Y_BED_SIZE;
+    #if ENABLED(NOZZLE_PARK_FEATURE)
+      xyz_int_t Park_point = DEF_NOZZLE_PARK_POINT;
+    #endif
+    int16_t x_bed_size = DEF_X_BED_SIZE;
+    int16_t y_bed_size = DEF_Y_BED_SIZE;
     int16_t x_min_pos = DEF_X_MIN_POS;
     int16_t y_min_pos = DEF_Y_MIN_POS;
-  int16_t x_max_pos = DEF_X_MAX_POS;
-  int16_t y_max_pos = DEF_Y_MAX_POS;
-  int16_t z_max_pos = DEF_Z_MAX_POS;
-  TERN_(HAS_MESH, uint8_t grid_max_points = DEF_GRID_MAX_POINTS);
-  #if HAS_BED_PROBE
-    float probing_margin = DEF_PROBING_MARGIN;
-    uint16_t zprobefeedslow = DEF_Z_PROBE_FEEDRATE_SLOW;
-  #endif
-  bool Invert_E0 = DEF_INVERT_E0_DIR;
-  bool FilamentMotionSensor = DEF_FIL_MOTION_SENSOR;
-    bool FullManualTramming = false;
+    int16_t x_max_pos = DEF_X_MAX_POS;
+    int16_t y_max_pos = DEF_Y_MAX_POS;
+    int16_t z_max_pos = DEF_Z_MAX_POS;
+    TERN_(HAS_MESH, uint8_t grid_max_points = DEF_GRID_MAX_POINTS);
+    #if HAS_BED_PROBE
+      float probing_margin = DEF_PROBING_MARGIN;
+      uint16_t zprobefeedslow = DEF_Z_PROBE_FEEDRATE_SLOW;
+    #endif
+    bool Invert_E0 = DEF_INVERT_E0_DIR;
+    bool FilamentMotionSensor = DEF_FIL_MOTION_SENSOR;
   #endif
 } HMI_data_t;
 
 static constexpr size_t eeprom_data_size = 96;
 extern HMI_data_t HMI_data;
 
+#if PREHEAT_1_TEMP_BED
+  #undef LEVELING_BED_TEMP
+  #define LEVELING_BED_TEMP HMI_data.BedLevT
+#endif
+
 #if ProUI
-#undef X_BED_SIZE
-#undef Y_BED_SIZE
+  #undef X_BED_SIZE
+  #undef Y_BED_SIZE
   #undef X_MIN_POS
   #undef Y_MIN_POS
-#undef X_MAX_POS
-#undef Y_MAX_POS
-#undef Z_MAX_POS
-#undef NOZZLE_PARK_POINT
-#if HAS_MESH
-  #undef GRID_MAX_POINTS_X
-  #undef GRID_MAX_POINTS_Y
-  #undef GRID_MAX_POINTS
-#endif
-#if HAS_BED_PROBE
-  #undef PROBING_MARGIN
-  #undef Z_PROBE_FEEDRATE_SLOW
-#endif
-#undef INVERT_E0_DIR
+  #undef X_MAX_POS
+  #undef Y_MAX_POS
+  #undef Z_MAX_POS
+  #undef NOZZLE_PARK_POINT
+  #if HAS_MESH
+    #undef GRID_MAX_POINTS_X
+    #undef GRID_MAX_POINTS_Y
+    #undef GRID_MAX_POINTS
+  #endif
+  #if HAS_BED_PROBE
+    #undef PROBING_MARGIN
+    #undef Z_PROBE_FEEDRATE_SLOW
+  #endif
+  #undef INVERT_E0_DIR
 
-#define X_BED_SIZE (float)HMI_data.x_bed_size
-#define Y_BED_SIZE (float)HMI_data.y_bed_size
+  #define X_BED_SIZE (float)HMI_data.x_bed_size
+  #define Y_BED_SIZE (float)HMI_data.y_bed_size
   #define X_MIN_POS  (float)HMI_data.x_min_pos
   #define Y_MIN_POS  (float)HMI_data.y_min_pos
-#define X_MAX_POS  (float)HMI_data.x_max_pos
-#define Y_MAX_POS  (float)HMI_data.y_max_pos
-#define Z_MAX_POS  (float)HMI_data.z_max_pos
-#define NOZZLE_PARK_POINT {(float)HMI_data.Park_point.x, (float)HMI_data.Park_point.y, (float)HMI_data.Park_point.z}
-#if HAS_MESH
-  #define GRID_MAX_POINTS_X HMI_data.grid_max_points
-  #define GRID_MAX_POINTS_Y HMI_data.grid_max_points
-  #define GRID_MAX_POINTS (HMI_data.grid_max_points * HMI_data.grid_max_points)
-#endif
-#if HAS_BED_PROBE
-  #define PROBING_MARGIN HMI_data.probing_margin
-  #define Z_PROBE_FEEDRATE_SLOW HMI_data.zprobefeedslow
-#endif
-#define INVERT_E0_DIR HMI_data.Invert_E0
+  #define X_MAX_POS  (float)HMI_data.x_max_pos
+  #define Y_MAX_POS  (float)HMI_data.y_max_pos
+  #define Z_MAX_POS  (float)HMI_data.z_max_pos
+  #define NOZZLE_PARK_POINT {(float)HMI_data.Park_point.x, (float)HMI_data.Park_point.y, (float)HMI_data.Park_point.z}
+  #if HAS_MESH
+    #define GRID_MAX_POINTS_X HMI_data.grid_max_points
+    #define GRID_MAX_POINTS_Y HMI_data.grid_max_points
+    #define GRID_MAX_POINTS (HMI_data.grid_max_points * HMI_data.grid_max_points)
+  #endif
+  #if HAS_BED_PROBE
+    #define PROBING_MARGIN HMI_data.probing_margin
+    #define Z_PROBE_FEEDRATE_SLOW HMI_data.zprobefeedslow
+  #endif
+  #define INVERT_E0_DIR HMI_data.Invert_E0
 
 #endif

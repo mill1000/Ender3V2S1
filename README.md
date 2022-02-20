@@ -21,7 +21,7 @@ Precompiled binary files can be downloader from:
  - [How to use with Octoprint](https://github.com/mriscoc/Ender3V2S1/wiki/Octoprint)
   
 ## Community links
-* Telegram
+* [Telegram](https://t.me/ender3v2s1firmware)
 * [Reddit](https://www.reddit.com/r/Ender3v2Firmware) 
 * [Ender 3V2 Facebook](https://www.facebook.com/groups/ender3v2firmware)
 * [Ender 3S1 Facebook](https://www.facebook.com/groups/ender3s1printer)
