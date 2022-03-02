@@ -319,9 +319,16 @@
   #endif
 #endif
 
-#ifdef GRID_MAX_POINTS_X
-  #define GRID_MAX_CELLS_X (GRID_MAX_POINTS_X - 1)
-  #define GRID_MAX_CELLS_Y (GRID_MAX_POINTS_Y - 1)
+#if ProUI
+  #ifdef GRID_LIMIT
+    #define GRID_MAX_CELLS_X (GRID_LIMIT - 1)
+    #define GRID_MAX_CELLS_Y (GRID_LIMIT - 1)
+  #endif
+#else
+  #ifdef GRID_MAX_POINTS_X
+    #define GRID_MAX_CELLS_X (GRID_MAX_POINTS_X - 1)
+    #define GRID_MAX_CELLS_Y (GRID_MAX_POINTS_Y - 1)
+  #endif
 #endif
 
 /**

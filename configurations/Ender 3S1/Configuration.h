@@ -462,6 +462,7 @@
  *    61 : 100kΩ  Formbot/Vivedino 350°C Thermistor - beta 3950
  *    66 : 4.7MΩ  Dyze Design High Temperature Thermistor
  *    67 : 500kΩ  SliceEngineering 450°C Thermistor
+ *    68 : PT100 amplifier board from Dyze Design
  *    70 : 100kΩ  bq Hephestos 2
  *    75 : 100kΩ  Generic Silicon Heat Pad with NTC100K MGB18-104F39050L32
  *  2000 : 100kΩ  Ultimachine Rambo TDK NTCG104LH104KT1 NTC100K motherboard Thermistor
@@ -575,7 +576,7 @@
 #define HEATER_5_MAXTEMP 275
 #define HEATER_6_MAXTEMP 275
 #define HEATER_7_MAXTEMP 275
-#define BED_MAXTEMP      120  // Ender3S1 Configs
+#define BED_MAXTEMP      110  // Ender3S1 Configs
 #define CHAMBER_MAXTEMP  60
 
 /**
@@ -750,7 +751,7 @@
 
 #define THERMAL_PROTECTION_HOTENDS // Enable thermal protection for all extruders
 #define THERMAL_PROTECTION_BED     // Enable thermal protection for the heated bed
-//#define THERMAL_PROTECTION_CHAMBER // Enable thermal protection for the heated chamber  // Ender3S1 Configs
+#define THERMAL_PROTECTION_CHAMBER // Enable thermal protection for the heated chamber
 #define THERMAL_PROTECTION_COOLER  // Enable thermal protection for the laser cooling
 
 //===========================================================================
@@ -803,12 +804,12 @@
 //#define USE_KMAX_PLUG
 
 // Enable pullup for all endstops to prevent a floating state
-#define ENDSTOPPULLUPS
+//#define ENDSTOPPULLUPS  // Ender3S1 Configs
 #if DISABLED(ENDSTOPPULLUPS)
   // Disable ENDSTOPPULLUPS to set pullups individually
   //#define ENDSTOPPULLUP_XMIN
   //#define ENDSTOPPULLUP_YMIN
-  //#define ENDSTOPPULLUP_ZMIN
+  #define ENDSTOPPULLUP_ZMIN  // Ender3S1 Configs
   //#define ENDSTOPPULLUP_IMIN
   //#define ENDSTOPPULLUP_JMIN
   //#define ENDSTOPPULLUP_KMIN
@@ -818,7 +819,7 @@
   //#define ENDSTOPPULLUP_IMAX
   //#define ENDSTOPPULLUP_JMAX
   //#define ENDSTOPPULLUP_KMAX
-  //#define ENDSTOPPULLUP_ZMIN_PROBE
+  #define ENDSTOPPULLUP_ZMIN_PROBE  // Ender3S1 Configs
 #endif
 
 // Enable pulldown for all endstops to prevent a floating state
@@ -843,7 +844,7 @@
 // Mechanical endstop with COM to ground and NC to Signal uses "false" here (most common setup).
 #define X_MIN_ENDSTOP_INVERTING true // Set to true to invert the logic of the endstop.  // Ender3S1 Configs
 #define Y_MIN_ENDSTOP_INVERTING true // Set to true to invert the logic of the endstop.  // Ender3S1 Configs
-#define Z_MIN_ENDSTOP_INVERTING false // Set to true to invert the logic of the endstop.
+#define Z_MIN_ENDSTOP_INVERTING true // Set to true to invert the logic of the endstop.  // Ender3S1 Configs
 #define I_MIN_ENDSTOP_INVERTING false // Set to true to invert the logic of the endstop.
 #define J_MIN_ENDSTOP_INVERTING false // Set to true to invert the logic of the endstop.
 #define K_MIN_ENDSTOP_INVERTING false // Set to true to invert the logic of the endstop.
@@ -946,11 +947,11 @@
  * Override with M203
  *                                      X, Y, Z [, I [, J [, K]]], E0 [, E1[, E2...]]
  */
-#define DEFAULT_MAX_FEEDRATE          { 500, 500, 10, 50 }  // MRiscoC increased Z speed, increased E speed for BMG
+#define DEFAULT_MAX_FEEDRATE          { 300, 300, 5, 25 }  // Ender3S1 Configs
 
-//#define LIMITED_MAX_FR_EDITING        // Limit edit via M203 or LCD to DEFAULT_MAX_FEEDRATE * 2
+#define LIMITED_MAX_FR_EDITING        // Limit edit via M203 or LCD to DEFAULT_MAX_FEEDRATE * 2  // MRiscoC allows higher limits
 #if ENABLED(LIMITED_MAX_FR_EDITING)
-  #define MAX_FEEDRATE_EDIT_VALUES    { 600, 600, 10, 50 } // ...or, set your own edit limits
+  #define MAX_FEEDRATE_EDIT_VALUES    { 1000, 1000, 20, 200 } // ...or, set your own edit limits  // MRiscoC allows higher limits
 #endif
 
 /**
@@ -959,11 +960,11 @@
  * Override with M201
  *                                      X, Y, Z [, I [, J [, K]]], E0 [, E1[, E2...]]
  */
-#define DEFAULT_MAX_ACCELERATION      { 500, 500, 100, 5000 }  // MRiscoC Acceleration limits increased
+#define DEFAULT_MAX_ACCELERATION      { 500, 500, 100, 1000 }  // Ender3S1 Configs
 
-//#define LIMITED_MAX_ACCEL_EDITING     // Limit edit via M201 or LCD to DEFAULT_MAX_ACCELERATION * 2
+#define LIMITED_MAX_ACCEL_EDITING     // Limit edit via M201 or LCD to DEFAULT_MAX_ACCELERATION * 2  // MRiscoC allows higher limits
 #if ENABLED(LIMITED_MAX_ACCEL_EDITING)
-  #define MAX_ACCEL_EDIT_VALUES       { 6000, 6000, 200, 20000 } // ...or, set your own edit limits
+  #define MAX_ACCEL_EDIT_VALUES       { 3000, 3000, 100, 9999 } // ...or, set your own edit limits  // MRiscoC allows higher limits
 #endif
 
 /**
@@ -976,7 +977,7 @@
  */
 #define DEFAULT_ACCELERATION          500    // X, Y, Z and E acceleration for printing moves  // Ender3S1 Configs
 #define DEFAULT_RETRACT_ACCELERATION  800    // E acceleration for retracts  // Ender3S1 Configs
-#define DEFAULT_TRAVEL_ACCELERATION   500    // X, Y, Z acceleration for travel (non printing) moves  // Ender3S1 Configs
+#define DEFAULT_TRAVEL_ACCELERATION   1000    // X, Y, Z acceleration for travel (non printing) moves  // Ender3S1 Configs
 
 /**
  * Default Jerk limits (mm/s)
@@ -997,9 +998,9 @@
 
   //#define TRAVEL_EXTRA_XYJERK 0.0     // Additional jerk allowance for all travel moves
 
-  //#define LIMITED_JERK_EDITING        // Limit edit via M205 or LCD to DEFAULT_aJERK * 2
+  #define LIMITED_JERK_EDITING        // Limit edit via M205 or LCD to DEFAULT_aJERK * 2  // Ender3S1 Configs
   #if ENABLED(LIMITED_JERK_EDITING)
-    #define MAX_JERK_EDIT_VALUES { 20, 20, 0.6, 10 } // ...or, set your own edit limits
+    #define MAX_JERK_EDIT_VALUES { 20, 20, 1, 20 } // ...or, set your own edit limits  // MRiscoC allows higher limits
   #endif
 #endif
 
@@ -1202,11 +1203,11 @@
  *     |    [-]    |
  *     O-- FRONT --+
  */
-#define NOZZLE_TO_PROBE_OFFSET { -31.80, -40.50, 0 }  // Ender3S1 Configs
+#define NOZZLE_TO_PROBE_OFFSET { -31.8, -40.5, 0 }  // Ender3S1 Configs
 
 // Most probes should stay away from the edges of the bed, but
 // with NOZZLE_AS_PROBE this can be negative for a wider probing area.
-#define PROBING_MARGIN 41  // MRiscoC center probe area
+#define PROBING_MARGIN 3  // MRiscoC for center probing area increase this value
 
 // X and Y axis travel speed (mm/min) between probes
 #define XY_PROBE_FEEDRATE (200*60)  // MRiscoC increase travel speed between probes
@@ -1279,12 +1280,12 @@
  * Example: `M851 Z-5` with a CLEARANCE of 4  =>  9mm from bed to nozzle.
  *     But: `M851 Z+1` with a CLEARANCE of 2  =>  2mm from bed to nozzle.
  */
-#define Z_CLEARANCE_DEPLOY_PROBE   7 // Z Clearance for Deploy/Stow  // MRiscoC Increase speed
-#define Z_CLEARANCE_BETWEEN_PROBES  7 // Z Clearance between probe points  // MRiscoC Increase probe compatibility
-#define Z_CLEARANCE_MULTI_PROBE     7 // Z Clearance between multiple probes  // MRiscoC Increase probe compatibility
+#define Z_CLEARANCE_DEPLOY_PROBE   10 // Z Clearance for Deploy/Stow  // Ender3S1 Configs
+#define Z_CLEARANCE_BETWEEN_PROBES  5 // Z Clearance between probe points  // Ender3S1 Configs
+#define Z_CLEARANCE_MULTI_PROBE     5 // Z Clearance between multiple probes  // Ender3S1 Configs
 //#define Z_AFTER_PROBING           5 // Z position after probing is done
 
-#define Z_PROBE_LOW_POINT          -4 // Farthest distance below the trigger-point to go before stopping  // MRiscoC allows reach lower points
+#define Z_PROBE_LOW_POINT          -2 // Farthest distance below the trigger-point to go before stopping  // Ender3S1 Configs
 
 // For M851 give a range for adjusting the Z probe offset
 #define Z_PROBE_OFFSET_RANGE_MIN -20
@@ -1384,10 +1385,10 @@
  */
 //#define Z_IDLE_HEIGHT Z_HOME_POS
 
-//#define Z_HOMING_HEIGHT  4      // (mm) Minimal Z height before homing (G28) for Z clearance above the bed, clamps, ...
+#define Z_HOMING_HEIGHT  5      // (mm) Minimal Z height before homing (G28) for Z clearance above the bed, clamps, ...  // MRiscoC Crearance over the bed
                                   // Be sure to have this much clearance over your Z_MAX_POS to prevent grinding.
 
-//#define Z_AFTER_HOMING  10      // (mm) Height to move to after homing Z
+#define Z_AFTER_HOMING  5      // (mm) Height to move to after homing Z  // MRiscoC Crearance over the bed
 
 // Direction of endstops when homing; 1=MAX, -1=MIN
 // :[-1,1]
@@ -1577,13 +1578,13 @@
  * these options to restore the prior leveling state or to always enable
  * leveling immediately after G28.
  */
-//#define RESTORE_LEVELING_AFTER_G28
+#define RESTORE_LEVELING_AFTER_G28  // Ender3S1 Configs
 //#define ENABLE_LEVELING_AFTER_G28
 
 /**
  * Auto-leveling needs preheating
  */
-#define PREHEAT_BEFORE_LEVELING  // MRiscoC Heatting to compensate thermal expansions
+//#define PREHEAT_BEFORE_LEVELING  // MRiscoC Heatting to compensate thermal expansions  // Ender3S1 Configs
 #if ENABLED(PREHEAT_BEFORE_LEVELING)
   #define LEVELING_NOZZLE_TEMP   0   // (°C) Only applies to E0 at this time  // MRiscoC No necessary for BLTouch
   #define LEVELING_BED_TEMP     50
@@ -1651,10 +1652,10 @@
     // Experimental Subdivision of the grid by Catmull-Rom method.
     // Synthesizes intermediate points to produce a more detailed mesh.
     //
-    //#define ABL_BILINEAR_SUBDIVISION
+    #define ABL_BILINEAR_SUBDIVISION  // Ender3S1 Configs
     #if ENABLED(ABL_BILINEAR_SUBDIVISION)
       // Number of subdivisions between probe points
-      #define BILINEAR_SUBDIVISIONS 3
+      #define BILINEAR_SUBDIVISIONS 5  // Ender3S1 Configs
     #endif
 
   #endif
@@ -1777,7 +1778,7 @@
 #endif
 
 // Homing speeds (mm/min)
-#define HOMING_FEEDRATE_MM_M { (50*60), (50*60), (10*60) }  // MRiscoC Homming speed-up
+#define HOMING_FEEDRATE_MM_M { (50*60), (50*60), (10*60) }  // MRiscoC Homing speed-up
 
 // Validate that endstops are triggered on homing moves
 #define VALIDATE_HOMING_ENDSTOPS
@@ -1921,8 +1922,7 @@
 #if ENABLED(NOZZLE_PARK_FEATURE)
   // Specify a park position as { X, Y, Z_raise }
   #define NOZZLE_PARK_POINT { (X_MAX_POS - 2), (Y_MAX_POS - 2), 20 }  // MRiscoC Customizable by menu
-  //#define NOZZLE_PARK_X_ONLY          // X move only is required to park
-  //#define NOZZLE_PARK_Y_ONLY          // Y move only is required to park
+  #define NOZZLE_PARK_MOVE          0   // Park motion: 0 = XY Move, 1 = X Only, 2 = Y Only, 3 = X before Y, 4 = Y before X
   #define NOZZLE_PARK_Z_RAISE_MIN   2   // (mm) Always raise Z by at least this distance
   #define NOZZLE_PARK_XY_FEEDRATE 100   // (mm/s) X and Y axes feedrate (also used for delta Z axis)
   #define NOZZLE_PARK_Z_FEEDRATE    5   // (mm/s) Z axis feedrate (not used for delta printers)

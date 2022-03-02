@@ -1,11 +1,11 @@
 /**
  * DWIN UI Enhanced implementation
  * Author: Miguel A. Risco-Castillo
- * Version: 3.13.1
- * Date: 2022/02/08
+ * Version: 3.15.1
+ * Date: 2022/02/25
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as 
+ * it under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
@@ -97,6 +97,13 @@
 #define ICON_CaseLight            ICON_Motion
 #define ICON_LedControl           ICON_Motion
 
+// Buttons
+#define BTN_Continue          85
+#define BTN_Cancel            87
+#define BTN_Confirm           89
+#define BTN_Print             90
+#define BTN_Save              91
+
 // Extended and default UI Colors
 #define Color_Black           0
 #define Color_Green           RGB(0,63,0)
@@ -109,7 +116,7 @@
 #define DWIN_FONT_HEAD font10x20
 #define DWIN_FONT_ALERT font10x20
 #define STATUS_Y 354
-#define LCD_WIDTH (DWIN_WIDTH / 8)
+#define LCD_WIDTH (DWIN_WIDTH / 8)  // only if the default font is font8x16
 
 // Minimum unit (0.1) : multiple (10)
 #define UNITFDIGITS 1
@@ -206,6 +213,7 @@ namespace DWINUI {
   extern uint16_t pencolor;
   extern uint16_t textcolor;
   extern uint16_t backcolor;
+  extern uint16_t buttoncolor;
   extern uint8_t  font;
   extern FSTR_P const Author;
 
@@ -235,7 +243,7 @@ namespace DWINUI {
   uint16_t RowToY(uint8_t row);
 
   // Set text/number color
-  void SetColors(uint16_t fgcolor, uint16_t bgcolor);
+  void SetColors(uint16_t fgcolor, uint16_t bgcolor, uint16_t alcolor);
   void SetTextColor(uint16_t fgcolor);
   void SetBackgroundColor(uint16_t bgcolor);
 
@@ -411,7 +419,8 @@ namespace DWINUI {
   }
 
   // Draw a char at cursor position
-  void Draw_Char(const char c);
+  void Draw_Char(uint16_t color, const char c);
+  inline void Draw_Char(const char c) { Draw_Char(textcolor, c); }
 
   // Draw a string at cursor position
   //  color: Character color
@@ -464,7 +473,10 @@ namespace DWINUI {
   //  bColor: Background color
   //  y: Upper coordinate of the string
   //  *string: The string
-  void Draw_CenteredString(bool bShow, uint8_t size, uint16_t color, uint16_t bColor, uint16_t y, const char * const string);
+  void Draw_CenteredString(bool bShow, uint8_t size, uint16_t color, uint16_t bColor, uint16_t x1, uint16_t x2, uint16_t y, const char * const string);
+  inline void Draw_CenteredString(bool bShow, uint8_t size, uint16_t color, uint16_t bColor, uint16_t y, const char * const string) {
+    Draw_CenteredString(bShow, size, color, bColor, 0, DWIN_WIDTH, y, string);
+  }
   inline void Draw_CenteredString(bool bShow, uint8_t size, uint16_t color, uint16_t bColor, uint16_t y, FSTR_P string) {
     Draw_CenteredString(bShow, size, color, bColor, y, FTOP(string));
   }
@@ -525,6 +537,17 @@ namespace DWINUI {
   //  color1 : Start color
   //  color2 : End color
   uint16_t ColorInt(int16_t val, int16_t minv, int16_t maxv, uint16_t color1, uint16_t color2);
+
+  // ------------------------- Buttons ------------------------------//
+
+  void Draw_Button(uint16_t color, uint16_t bcolor, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const char * const caption);
+  inline void Draw_Button(uint16_t color, uint16_t bcolor, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, FSTR_P caption) {
+    Draw_Button(color, bcolor, x1, y1, x2, y2, FTOP(caption));
+  }
+  inline void Draw_Button(FSTR_P caption, uint16_t x, uint16_t y) {
+    Draw_Button(textcolor, buttoncolor, x, y, x + 99, y + 37, caption);
+  }
+  void Draw_Button(uint8_t id, uint16_t x, uint16_t y);
 
   // -------------------------- Extra -------------------------------//
 

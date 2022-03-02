@@ -1,8 +1,8 @@
 /**
  * Enhanced DWIN implementation
  * authors: Miguel A. Risco-Castillo (MRISCOC)
- * Version: 3.14.3
- * Date: 2022/02/17
+ * Version: 3.15.3
+ * Date: 2022/03/01
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -50,26 +50,19 @@ enum processID : uint8_t {
   SetPFloat,
   SelectFile,
   PrintProcess,
-  PrintDone,
-  PwrlossRec,
-  Reboot,
-  Info,
-  ConfirmToPrint,
-
-  // Popup Windows
-  Homing,
+  Popup,
   Leveling,
-  PidProcess,
-  ESDiagProcess,
-  PrintStatsProcess,
-  PauseOrStop,
-  FilamentPurge,
-  WaitResponse,
   Locked,
-  NothingToDo,
+  Reboot,
+  PrintDone,
+  ESDiagProcess,
+  WaitResponse,
+  Homing,
+  PidProcess,
+  NothingToDo
 };
 
-enum pidresult_t : uint8_t { 
+enum pidresult_t : uint8_t {
   PID_BAD_EXTRUDER_NUM,
   PID_TEMP_TOO_HIGH,
   PID_TUNING_TIMEOUT,
@@ -112,9 +105,6 @@ extern millis_t dwin_heat_time;
 #if HAS_HOTEND || HAS_HEATED_BED
   void DWIN_Popup_Temperature(const bool toohigh);
 #endif
-#if HAS_HOTEND
-  void Popup_Window_ETempTooLow();
-#endif
 #if ENABLED(POWER_LOSS_RECOVERY)
   void Popup_PowerLossRecovery();
 #endif
@@ -142,6 +132,12 @@ void RebootPrinter();
   void SetBaud115K();
   void SetBaud250K();
 #endif
+#if ENABLED(EEPROM_SETTINGS)
+  void WriteEeprom();
+  void ReadEeprom();
+  void ResetEeprom();
+#endif
+
 
 void HMI_WaitForUser();
 void HMI_SaveProcessID(const uint8_t id);
