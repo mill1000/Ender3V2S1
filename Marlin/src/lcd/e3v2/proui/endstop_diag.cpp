@@ -1,6 +1,6 @@
 /**
- * DWIN End Stops diagnostic page
- * Author: Miguel A. Risco-Castillo
+ * DWIN End Stops diagnostic page for PRO UI
+ * Author: Miguel A. Risco-Castillo (MRISCOC)
  * Version: 1.2.3
  * Date: 2022/02/24
  *
@@ -92,7 +92,7 @@ void ESDiagClass::Update() {
     ES_REPORT(Z_MIN);
   #endif
   #if HAS_FILAMENT_SENSOR
-    draw_es_state(READ(FIL_RUNOUT1_PIN) != TERN(ProUI, HMI_data.Runout_active_state, FIL_RUNOUT1_STATE));
+    draw_es_state(READ(FIL_RUNOUT1_PIN) != TERN(ProUIex, HMI_data.Runout_active_state, FIL_RUNOUT1_STATE));
   #endif
   DWIN_UpdateLCD();
 }

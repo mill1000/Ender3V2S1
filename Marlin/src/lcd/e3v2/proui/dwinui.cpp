@@ -1,6 +1,6 @@
 /**
- * DWIN UI Enhanced implementation
- * Author: Miguel A. Risco-Castillo
+ * DWIN Enhanced implementation for PRO UI
+ * Author: Miguel A. Risco-Castillo (MRISCOC)
  * Version: 3.15.1
  * Date: 2022/02/25
  *
@@ -52,12 +52,12 @@ void (*DWINUI::onTitleDraw)(TitleClass* title)=nullptr;
 void (*DWINUI::onMenuDraw)(MenuClass* menu)=nullptr;
 
 void DWINUI::init() {
-  TERN_(DEBUG_DWIN, DEBUG_ECHOPGM("\r\nDWIN handshake ");)
+  TERN_(DEBUG_DWIN, SERIAL_ECHOPGM("\r\nDWIN handshake ");)
   delay(750);   // Delay for wait to wakeup screen
-  TERN(DEBUG_DWIN, if (DWIN_Handshake()) DEBUG_ECHOLNPGM("ok."); else DEBUG_ECHOLNPGM("error."), DWIN_Handshake());
+  const bool hs = DWIN_Handshake();
+  TERN(DEBUG_DWIN, SERIAL_ECHOLNF(hs ? F("ok.") : F("error.")), UNUSED(hs));
   DWIN_Frame_SetDir(1);
-  cursor.x = 0;
-  cursor.y = 0;
+  cursor.reset();
   pencolor = Color_White;
   textcolor = Def_Text_Color;
   backcolor = Def_Background_Color;
@@ -183,6 +183,36 @@ void DWINUI::Draw_String(uint16_t color, const char * const string, uint16_t rli
   MoveBy(strlen(string) * fontWidth(font), 0);
 }
 
+// Draw a numeric integer value
+//  bShow: true=display background color; false=don't display background color
+//  signedMode: 1=signed; 0=unsigned
+//  size: Font size
+//  color: Character color
+//  bColor: Background color
+//  iNum: Number of digits
+//  x/y: Upper-left coordinate
+//  value: Integer value
+void DWINUI::Draw_Int(uint8_t bShow, bool signedMode, uint8_t size, uint16_t color, uint16_t bColor, uint8_t iNum, uint16_t x, uint16_t y, int32_t value) {
+  char nstr[10];
+  sprintf_P(nstr, PSTR("%*li"), (signedMode ? iNum + 1 : iNum), value);
+  DWIN_Draw_String(bShow, size, color, bColor, x, y, nstr);
+}
+
+// Draw a numeric float value
+//  bShow: true=display background color; false=don't display background color
+//  signedMode: 1=signed; 0=unsigned
+//  size: Font size
+//  color: Character color
+//  bColor: Background color
+//  iNum: Number of digits
+//  fNum: Number of decimal digits
+//  x/y: Upper-left coordinate
+//  value: float value
+void DWINUI::Draw_Float(uint8_t bShow, bool signedMode, uint8_t size, uint16_t color, uint16_t bColor, uint8_t iNum, uint8_t fNum, uint16_t x, uint16_t y, float value) {
+  char nstr[10];
+  DWIN_Draw_String(bShow, size, color, bColor, x, y, dtostrf(value, iNum + (signedMode ? 2:1) + fNum, fNum, nstr));
+}
+
 // ------------------------- Buttons ------------------------------//
 
 void DWINUI::Draw_Button(uint16_t color, uint16_t bcolor, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const char * const caption) {
@@ -200,6 +230,7 @@ void DWINUI::Draw_Button(uint8_t id, uint16_t x, uint16_t y) {
     default: break;
   }
 }
+
 // -------------------------- Extra -------------------------------//
 
 // Draw a circle
@@ -249,13 +280,12 @@ void DWINUI::Draw_FillCircle(uint16_t bcolor, uint16_t x,uint16_t y,uint8_t r) {
 //  color1 : Start color
 //  color2 : End color
 uint16_t DWINUI::ColorInt(int16_t val, int16_t minv, int16_t maxv, uint16_t color1, uint16_t color2) {
-  uint8_t B,G,R;
-  float n;
-  n = (float)(val-minv)/(maxv-minv);
-  R = (1-n)*GetRColor(color1) + n*GetRColor(color2);
-  G = (1-n)*GetGColor(color1) + n*GetGColor(color2);
-  B = (1-n)*GetBColor(color1) + n*GetBColor(color2);
-  return RGB(R,G,B);
+  uint8_t B, G, R;
+  const float n = (float)(val - minv) / (maxv - minv);
+  R = (1 - n) * GetRColor(color1) + n * GetRColor(color2);
+  G = (1 - n) * GetGColor(color1) + n * GetGColor(color2);
+  B = (1 - n) * GetBColor(color1) + n * GetBColor(color2);
+  return RGB(R, G, B);
 }
 
 // Color Interpolator through Red->Yellow->Green->Blue
@@ -263,33 +293,27 @@ uint16_t DWINUI::ColorInt(int16_t val, int16_t minv, int16_t maxv, uint16_t colo
 //  minv : Minimum value
 //  maxv : Maximum value
 uint16_t DWINUI::RainbowInt(int16_t val, int16_t minv, int16_t maxv) {
-  uint8_t B,G,R;
-  const uint8_t maxB = 28;
-  const uint8_t maxR = 28;
-  const uint8_t maxG = 38;
+  uint8_t B, G, R;
+  const uint8_t maxB = 28, maxR = 28, maxG = 38;
   const int16_t limv = _MAX(abs(minv), abs(maxv)); 
-  float n;
-  if (minv>=0) {
-    n = (float)(val-minv)/(maxv-minv);
-  } else {
-    n = (float)val/limv;
-  }
-  n = _MIN(1, n);
-  n = _MAX(-1, n);
+  float n = minv >= 0 ? (float)(val - minv) / (maxv - minv) : (float)val / limv;
+  LIMIT(n, -1, 1);
   if (n < 0) {
     R = 0;
-    G = (1+n)*maxG;
-    B = (-n)*maxB;
-  } else if (n < 0.5) {
-    R = maxR*n*2;
+    G = (1 + n) * maxG;
+    B = (-n) * maxB;
+  }
+  else if (n < 0.5) {
+    R = maxR * n * 2;
     G = maxG;
     B = 0;
-  } else {
+  }
+  else {
     R = maxR;
-    G = maxG*(1-n);
+    G = maxG * (1 - n);
     B = 0;
   }
-  return RGB(R,G,B);
+  return RGB(R, G, B);
 }
 
 // Draw a checkbox

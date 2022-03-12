@@ -1,8 +1,8 @@
 /**
- * Enhanced DWIN implementation
- * authors: Miguel A. Risco-Castillo (MRISCOC)
- * Version: 3.15.3
- * Date: 2022/03/01
+ * DWIN Enhanced implementation for PRO UI
+ * Author: Miguel A. Risco-Castillo (MRISCOC)
+ * Version: 3.16.3
+ * Date: 2022/03/06
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -20,10 +20,12 @@
  */
 #pragma once
 
-#include "../../../inc/MarlinConfigPre.h"
+#include "dwin_defines.h"
 #include "dwinui.h"
 #include "../common/encoder.h"
 #include "../../../libs/BL24CXX.h"
+
+#include "../../../inc/MarlinConfig.h"
 
 #if ANY(AUTO_BED_LEVELING_BILINEAR, AUTO_BED_LEVELING_LINEAR, AUTO_BED_LEVELING_3POINT) && DISABLED(PROBE_MANUALLY)
   #define HAS_ONESTEP_LEVELING 1
@@ -36,8 +38,6 @@
 #if ANY(BABYSTEPPING, HAS_BED_PROBE, HAS_WORKSPACE_OFFSET)
   #define HAS_ZOFFSET_ITEM 1
 #endif
-
-#include "dwin_defines.h"
 
 enum processID : uint8_t {
   // Process ID
@@ -91,7 +91,7 @@ typedef struct {
   bool select_flag:1;   // Popup button selected
   bool home_flag:1;     // homing in course
   bool heat_flag:1;     // 0: heating done  1: during heating
-  #if ProUI && HAS_LEVELING
+  #if ProUIex && HAS_LEVELING
     bool cancel_abl:1;  // cancel current abl
   #endif
 } HMI_flag_t;
@@ -150,12 +150,12 @@ void DWIN_CheckStatusMessage();
 void DWIN_StartHoming();
 void DWIN_CompletedHoming();
 #if HAS_MESH
-  void DWIN_MeshUpdate(const int8_t xpos, const int8_t ypos, const float zval);
+  void DWIN_MeshUpdate(const int8_t xpos, const int8_t ypos, const_float_t zval);
 #endif
 void DWIN_MeshLevelingStart();
 void DWIN_CompletedLeveling();
 void DWIN_PidTuning(pidresult_t result);
-void DWIN_Print_Started(const bool sd = false);
+void DWIN_Print_Started(const bool sd=false);
 void DWIN_Print_Pause();
 void DWIN_Print_Resume();
 void DWIN_Print_Finished();
@@ -167,7 +167,7 @@ void DWIN_Progress_Update();
 void DWIN_Print_Header(const char *text);
 void DWIN_SetColorDefaults();
 void DWIN_ApplyColor();
-void DWIN_ApplyColor(const int8_t element, const bool ldef = false);
+void DWIN_ApplyColor(const int8_t element, const bool ldef=false);
 void DWIN_StoreSettings(char *buff);
 void DWIN_LoadSettings(const char *buff);
 void DWIN_SetDataDefaults();
@@ -175,7 +175,7 @@ void DWIN_RebootScreen();
 void DWIN_Gcode(const int16_t codenum);
 
 #if ENABLED(ADVANCED_PAUSE_FEATURE)
-  void DWIN_Popup_Pause(FSTR_P const fmsg, uint8_t button = 0);
+  void DWIN_Popup_Pause(FSTR_P const fmsg, uint8_t button=0);
   void Draw_Popup_FilamentPurge();
   void Goto_FilamentPurge();
   void HMI_FilamentPurge();

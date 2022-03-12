@@ -28,7 +28,11 @@
 #include "env_validate.h"
 
 #if HAS_MULTI_HOTEND || E_STEPPERS > 1
-  #error "Creality V4 only supports one hotend / E-stepper. Comment out this line to continue."
+  #error "Creality V24S1 only supports one hotend / E-stepper. Comment out this line to continue."
+#endif
+
+#if BOTH(BLTOUCH, Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN)
+  #error "Disable Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN when using BLTOUCH with Creality V24S1-301."
 #endif
 
 #define BOARD_INFO_NAME      "Creality V24S1-301"
@@ -44,12 +48,7 @@
 //
 // Limit Switches
 //
-#ifdef BLTOUCH
-  #define Z_STOP_PIN                        PC14
-  #define Z_STOP_PIN_NADD                   PA15  //Added z-axis limit switch  rock_20210816
-#else
-  #define Z_STOP_PIN                        PA15
-#endif
+#define Z_STOP_PIN                          PA15
 
 #ifndef Z_MIN_PROBE_PIN
   #define Z_MIN_PROBE_PIN                   PC14  // BLTouch IN
@@ -62,20 +61,11 @@
   #define FIL_RUNOUT_PIN                    PC15  // "Pulled-high"
 #endif
 
-//Backpower 
-#ifndef BACKPOWER_CTRL_PIN
-  #define BACKPOWER_CTRL_PIN                PA4  // When the ADC detects that the 24V supply is less than 20V, the continuation data is saved first, and then PA4=1. ---------zy
-#endif
-
-#ifndef CHECK_24V_PIN
-#define POWER_DETECTION_PIN                 PB0  // Detects the ADC input pin of the 24V supply
-#endif  
-
 //
 // Heaters / Fans
 //
-#define HEATER_BED_PIN                      PA7  // HOT BED
-#define FAN1_PIN                            PC0  // extruder fan
+#define HEATER_BED_PIN                      PA7   // HOT BED
+#define FAN1_PIN                            PC0   // extruder fan
 
 //
 // SD Card
@@ -87,12 +77,14 @@
 // M3/M4/M5 - Spindle/Laser Control
 //
 #if HAS_CUTTER
-  // #undef HEATER_0_PIN
-  // #undef HEATER_BED_PIN
-  #undef FAN_PIN
-  #define SPINDLE_LASER_ENA_PIN             PA0  // FET 1
-  #define SPINDLE_LASER_PWM_PIN             PA0  // Bed FET
-  #define SPINDLE_DIR_PIN                   PA0  // FET 4
+  //#define HEATER_0_PIN                    -1
+  //#define HEATER_BED_PIN                  -1
+  #define FAN_PIN                           -1
+  #define SPINDLE_LASER_ENA_PIN            PC0  // FET 1
+  #define SPINDLE_LASER_PWM_PIN            PC0  // Bed FET
+  #define SPINDLE_DIR_PIN                  PC0  // FET 4
+  #define LASER_SOFT_PWM_PIN				       PC0  //激光软PWM引脚
+
 #endif
 
 #include "pins_CREALITY_V4.h"
