@@ -1632,6 +1632,7 @@ void setup() {
   marlin_state = MF_RUNNING;
 
   SETUP_LOG("setup() completed.");
+
 }
 
 /**

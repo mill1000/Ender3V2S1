@@ -62,7 +62,7 @@ public:
 #if HAS_ONESTEP_LEVELING
   static void HeatedBed();
   static void StopLeveling();
-  static bool CompletedLeveling();
+  static bool LevelingDone();
 #endif
 #if HAS_FILAMENT_SENSOR
   static void SetRunoutState();

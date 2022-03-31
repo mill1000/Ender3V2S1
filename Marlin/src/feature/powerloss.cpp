@@ -455,10 +455,6 @@ void PrintJobRecovery::resume() {
     #endif
   #endif
 
-  #if ProUIex
-    ProEx.PowerLoss();
-  #endif
-
   #if ENABLED(POWER_LOSS_RECOVER_ZHOME)
     // Z was homed down to the bed, so move up to the raised height.
     z_now = z_raised;
@@ -545,6 +541,10 @@ void PrintJobRecovery::resume() {
 
   #if ENABLED(NOZZLE_CLEAN_FEATURE)
     gcode.process_subcommands_now(F("G12"));
+  #endif
+
+  #if ProUIex
+    ProEx.PowerLoss();
   #endif
 
   // Move back over to the saved XY

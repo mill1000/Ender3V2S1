@@ -476,7 +476,7 @@ namespace Language_en {
   LSTR MSG_CONTROL_RETRACT_SWAP           = _UxGT("Swap Re.mm");
   LSTR MSG_CONTROL_RETRACTF               = _UxGT("Retract V");
   LSTR MSG_CONTROL_RETRACT_ZHOP           = _UxGT("Hop mm");
-  LSTR MSG_CONTROL_RETRACT_RECOVER        = _UxGT("Unretr. mm");
+  LSTR MSG_CONTROL_RETRACT_RECOVER        = _UxGT("Unretr. extra");
   LSTR MSG_CONTROL_RETRACT_RECOVER_SWAP   = _UxGT("S Unretr. mm");
   LSTR MSG_CONTROL_RETRACT_RECOVERF       = _UxGT("Unretract V");
   LSTR MSG_CONTROL_RETRACT_RECOVER_SWAPF  = _UxGT("S UnRet V");

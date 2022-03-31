@@ -52,9 +52,9 @@ void (*DWINUI::onTitleDraw)(TitleClass* title)=nullptr;
 void (*DWINUI::onMenuDraw)(MenuClass* menu)=nullptr;
 
 void DWINUI::init() {
-  TERN_(DEBUG_DWIN, SERIAL_ECHOPGM("\r\nDWIN handshake ");)
   delay(750);   // Delay for wait to wakeup screen
   const bool hs = DWIN_Handshake();
+  TERN_(DEBUG_DWIN, SERIAL_ECHOPGM("DWIN_Handshake ");)
   TERN(DEBUG_DWIN, SERIAL_ECHOLNF(hs ? F("ok.") : F("error.")), UNUSED(hs));
   DWIN_Frame_SetDir(1);
   cursor.reset();
@@ -295,7 +295,7 @@ uint16_t DWINUI::ColorInt(int16_t val, int16_t minv, int16_t maxv, uint16_t colo
 uint16_t DWINUI::RainbowInt(int16_t val, int16_t minv, int16_t maxv) {
   uint8_t B, G, R;
   const uint8_t maxB = 28, maxR = 28, maxG = 38;
-  const int16_t limv = _MAX(abs(minv), abs(maxv)); 
+  const int16_t limv = _MAX(abs(minv), abs(maxv));
   float n = minv >= 0 ? (float)(val - minv) / (maxv - minv) : (float)val / limv;
   LIMIT(n, -1, 1);
   if (n < 0) {

@@ -82,6 +82,7 @@ typedef struct {
 } HMI_value_t;
 
 typedef struct {
+  bool percent_flag:1;  // percent was override by M73
   bool remain_flag:1;   // remain was override by M73
   bool pause_flag:1;    // printing is paused
   bool pause_action:1;  // flag a pause action
@@ -147,13 +148,13 @@ void update_variable();
 void DWIN_InitScreen();
 void DWIN_HandleScreen();
 void DWIN_CheckStatusMessage();
-void DWIN_StartHoming();
-void DWIN_CompletedHoming();
+void DWIN_HomingStart();
+void DWIN_HomingDone();
 #if HAS_MESH
   void DWIN_MeshUpdate(const int8_t xpos, const int8_t ypos, const_float_t zval);
 #endif
-void DWIN_MeshLevelingStart();
-void DWIN_CompletedLeveling();
+void DWIN_LevelingStart();
+void DWIN_LevelingDone();
 void DWIN_PidTuning(pidresult_t result);
 void DWIN_Print_Started(const bool sd=false);
 void DWIN_Print_Pause();

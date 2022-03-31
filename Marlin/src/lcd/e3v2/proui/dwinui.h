@@ -46,6 +46,7 @@
 #define ICON_FWRetSpeed           ICON_Setspeed
 #define ICON_FWRetZRaise          ICON_MoveZ
 #define ICON_FWRecSpeed           ICON_Setspeed
+#define ICON_FWRecExtra           ICON_StepE
 #define ICON_HomeX                ICON_MoveX
 #define ICON_HomeY                ICON_MoveY
 #define ICON_HomeZ                ICON_MoveZ
@@ -372,8 +373,8 @@ namespace DWINUI {
   inline void Draw_Float(uint8_t iNum, uint8_t fNum, uint16_t x, uint16_t y, float value) {
     Draw_Float(false, 0, font, textcolor, backcolor, iNum, fNum, x, y, value);
   }
-  inline void Draw_Float(uint16_t color, uint8_t iNum, uint8_t fNum, uint16_t x, uint16_t y, float value) {
-    Draw_Float(false, 0, font, color, backcolor, iNum, fNum, x, y, value);
+  inline void Draw_Float(uint8_t size, uint8_t iNum, uint8_t fNum, uint16_t x, uint16_t y, float value) {
+    Draw_Float(false, 0, size, textcolor, backcolor, iNum, fNum, x, y, value);
   }
   inline void Draw_Float(uint16_t color, uint16_t bColor, uint8_t iNum, uint8_t fNum, uint16_t x, uint16_t y, float value) {
     Draw_Float(true, 0, font, color, bColor, iNum, fNum, x, y, value);
