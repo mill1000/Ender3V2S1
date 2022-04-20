@@ -28,20 +28,20 @@
 /**
  * Marlin release version identifier
  */
-#define SHORT_BUILD_VERSION "2.0.9.4 MRiscoC"
+#define SHORT_BUILD_VERSION "2.1.0.1 MRiscoC"
 
 /**
  * Verbose version identifier which should contain a reference to the location
  * from where the binary was downloaded or the source code was compiled.
  */
-#define DETAILED_BUILD_VERSION SHORT_BUILD_VERSION " 427 ManualMesh, based on bugfix-2.0.x"
+#define DETAILED_BUILD_VERSION SHORT_BUILD_VERSION " 422 ManualMesh, based on bugfix-2.0.x"
 
 /**
  * The STRING_DISTRIBUTION_DATE represents when the binary file was built,
  * here we define this default string as the date where the latest release
  * version was tagged.
  */
-//#define STRING_DISTRIBUTION_DATE "2022-03-11"
+//#define STRING_DISTRIBUTION_DATE "2022-04-12"
 
 #define STRING_DISTRIBUTION_DATE __DATE__
 #define STRING_DISTRIBUTION_TIME __TIME__

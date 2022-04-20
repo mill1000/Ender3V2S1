@@ -34,10 +34,17 @@
 #if ProUIex
   #include "proui.h"
   #define HAS_GCODE_PREVIEW 1
+  #define HAS_TOOLBAR 1
 #endif
 
 #define HAS_ESDIAG 1
+#if MB(CREALITY_V24S1_301)
+  #define DASH_REDRAW 1
+#endif
 
+#if DISABLED(FILAMENT_RUNOUT_SENSOR)
+  #error "FILAMENT_RUNOUT_SENSOR is required with ProUI."
+#endif
 #if DISABLED(INDIVIDUAL_AXIS_HOMING_SUBMENU)
   #error "INDIVIDUAL_AXIS_HOMING_SUBMENU is required with ProUI."
 #endif
@@ -55,6 +62,12 @@
 #endif
 #if DISABLED(PRINTCOUNTER)
   #error "PRINTCOUNTER is required with ProUI."
+#endif
+#if ENABLED(HAS_GCODE_PREVIEW) && DISABLED(ProUIex)
+  #error "HAS_GCODE_PREVIEW requires ProUIex."
+#endif
+#if ENABLED(HAS_TOOLBAR) && DISABLED(ProUIex)
+  #error "HAS_TOOLBAR requires ProUIex."
 #endif
 
 #define Def_Background_Color  RGB( 1, 12,  8)
@@ -76,6 +89,12 @@
 #define Def_Indicator_Color   Color_White
 #define Def_Coordinate_Color  Color_White
 #define Def_Button_Color      RGB( 0, 23, 16)
+#if ENABLED(LED_CONTROL_MENU, HAS_COLOR_LEDS)
+  #define Def_Leds_Color      {255}
+#endif
+#if ENABLED(CASELIGHT_USES_BRIGHTNESS)
+  #define Def_CaseLight_Brightness 255
+#endif
 
 typedef struct {
   // Color settings
@@ -113,6 +132,10 @@ typedef struct {
   int16_t BedLevT = TERN0(PREHEAT_1_TEMP_BED, PREHEAT_1_TEMP_BED);
   TERN_(BAUD_RATE_GCODE, bool Baud115K = false);
   bool FullManualTramming = false;
+  // Led
+  #if BOTH(LED_CONTROL_MENU, HAS_COLOR_LEDS)
+    uint32_t LEDColor = Def_Leds_Color;
+  #endif
   #ifdef MESH_BED_LEVELING
     float ManualZOffset = 0;
   #endif
@@ -128,17 +151,26 @@ typedef struct {
     int16_t x_max_pos = DEF_X_MAX_POS;
     int16_t y_max_pos = DEF_Y_MAX_POS;
     int16_t z_max_pos = DEF_Z_MAX_POS;
-    TERN_(HAS_MESH, uint8_t grid_max_points = DEF_GRID_MAX_POINTS);
+    #if HAS_MESH
+      uint8_t grid_max_points = DEF_GRID_MAX_POINTS;
+      float mesh_min_x = DEF_MESH_MIN_X;
+      float mesh_max_x = DEF_MESH_MAX_X;
+      float mesh_min_y = DEF_MESH_MIN_Y;
+      float mesh_max_y = DEF_MESH_MAX_Y;
+    #endif
     #if HAS_BED_PROBE
-      float probing_margin = DEF_PROBING_MARGIN;
       uint16_t zprobefeedslow = DEF_Z_PROBE_FEEDRATE_SLOW;
     #endif
     bool Invert_E0 = DEF_INVERT_E0_DIR;
     bool FilamentMotionSensor = DEF_FIL_MOTION_SENSOR;
+    #if HAS_TOOLBAR
+      #define TBMaxOpt 5
+      uint8_t TBopt[TBMaxOpt] = {0, 1, 2, 3, 4};
+    #endif
   #endif
 } HMI_data_t;
 
-static constexpr size_t eeprom_data_size = 96;
+static constexpr size_t eeprom_data_size = 112;
 extern HMI_data_t HMI_data;
 
 #if PREHEAT_1_TEMP_BED
@@ -159,9 +191,12 @@ extern HMI_data_t HMI_data;
     #undef GRID_MAX_POINTS_X
     #undef GRID_MAX_POINTS_Y
     #undef GRID_MAX_POINTS
+    #undef MESH_MIN_X
+    #undef MESH_MAX_X
+    #undef MESH_MIN_Y
+    #undef MESH_MAX_Y
   #endif
   #if HAS_BED_PROBE
-    #undef PROBING_MARGIN
     #undef Z_PROBE_FEEDRATE_SLOW
   #endif
   #undef INVERT_E0_DIR
@@ -178,11 +213,13 @@ extern HMI_data_t HMI_data;
     #define GRID_MAX_POINTS_X HMI_data.grid_max_points
     #define GRID_MAX_POINTS_Y HMI_data.grid_max_points
     #define GRID_MAX_POINTS (HMI_data.grid_max_points * HMI_data.grid_max_points)
+    #define MESH_MIN_X HMI_data.mesh_min_x
+    #define MESH_MAX_X HMI_data.mesh_max_x
+    #define MESH_MIN_Y HMI_data.mesh_min_y
+    #define MESH_MAX_Y HMI_data.mesh_max_y
   #endif
   #if HAS_BED_PROBE
-    #define PROBING_MARGIN HMI_data.probing_margin
     #define Z_PROBE_FEEDRATE_SLOW HMI_data.zprobefeedslow
   #endif
   #define INVERT_E0_DIR HMI_data.Invert_E0
-
-#endif
+#endif  // ProUIex

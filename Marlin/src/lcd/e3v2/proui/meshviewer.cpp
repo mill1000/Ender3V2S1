@@ -1,8 +1,8 @@
 /**
  * Mesh Viewer for PRO UI
  * Author: Miguel A. Risco-Castillo (MRISCOC)
- * version: 3.13.1
- * Date: 2022/03/27
+ * version: 3.14.1
+ * Date: 2022/04/11
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -33,6 +33,10 @@
 #include "dwin_popup.h"
 #include "../../../feature/bedlevel/bedlevel.h"
 
+#if ENABLED(AUTO_BED_LEVELING_UBL)
+  #include "ubl_tools.h"
+#endif
+
 MeshViewerClass MeshViewer;
 
 void MeshViewerClass::DrawMesh(bed_mesh_t zval, const uint8_t sizex, const uint8_t sizey) {
@@ -57,7 +61,7 @@ void MeshViewerClass::DrawMesh(bed_mesh_t zval, const uint8_t sizex, const uint8
   }
   max = (float)maxz / 100;
   min = (float)minz / 100;
-  DWINUI::ClearMenuArea();
+  DWINUI::ClearMainArea();
   DWIN_Draw_Rectangle(0, HMI_data.SplitLine_Color, px(0), py(0), px(sizex - 1), py(sizey - 1));
   LOOP_S_L_N(x, 1, sizex - 1) DrawMeshVLine(x);
   LOOP_S_L_N(y, 1, sizey - 1) DrawMeshHLine(y);
@@ -99,22 +103,32 @@ void MeshViewerClass::DrawMesh(bed_mesh_t zval, const uint8_t sizex, const uint8
 }
 
 void MeshViewerClass::Draw(bool withsave /*= false*/) {
-  Title.ShowCaption(F("Mesh Viewer"));
-  DrawMesh(Z_VALUES_ARR, GRID_MAX_POINTS_X, GRID_MAX_POINTS_Y);
+  Title.ShowCaption(GET_TEXT_F(MSG_MESH_VIEWER));
+  #if ENABLED(USE_UBL_VIEWER)
+    DWINUI::ClearMainArea();
+    ubl_tools.viewer_print_value = true;
+    ubl_tools.Draw_Bed_Mesh(-1, 1, 8, 10 + TITLE_HEIGHT);
+  #else
+    DrawMesh(Z_VALUES_ARR, GRID_MAX_POINTS_X, GRID_MAX_POINTS_Y);
+  #endif
   if (withsave) {
     DWINUI::Draw_Button(BTN_Save, 26, 305);
     DWINUI::Draw_Button(BTN_Continue, 146, 305);
     Draw_Select_Highlight(HMI_flag.select_flag, 305);
   } else DWINUI::Draw_Button(BTN_Continue, 86, 305);
-  char str_1[6], str_2[6] = "";
-  ui.status_printf(0, F("Mesh minZ: %s, maxZ: %s"),
-    dtostrf(min, 1, 2, str_1),
-    dtostrf(max, 1, 2, str_2)
-  );
+  #if ENABLED(USE_UBL_VIEWER)
+    ubl_tools.Set_Mesh_Viewer_Status();
+  #else
+    char str_1[6], str_2[6] = "";
+    ui.status_printf(0, F("Mesh minZ: %s, maxZ: %s"),
+      dtostrf(min, 1, 2, str_1),
+      dtostrf(max, 1, 2, str_2)
+    );
+  #endif
 }
 
 void Draw_MeshViewer() { MeshViewer.Draw(true); }
-void onClick_MeshViewer() { if (HMI_flag.select_flag) WriteEeprom(); HMI_ReturnScreen(); }
+void onClick_MeshViewer() { if (HMI_flag.select_flag) SaveMesh(); HMI_ReturnScreen(); }
 void Goto_MeshViewer() { if (leveling_is_valid()) Goto_Popup(Draw_MeshViewer, onClick_MeshViewer);  else HMI_ReturnScreen(); }
 
 #endif // DWIN_LCD_PROUI && HAS_MESH
