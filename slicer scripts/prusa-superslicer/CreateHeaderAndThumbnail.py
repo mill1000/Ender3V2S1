@@ -2,9 +2,10 @@
 
 # ------------------------------------------------------------------------------
 # Prusa / Super Slicer post-processor script for the Professional Firmware
-# URL: https://github.com/mriscoc/Marlin_Ender3v2/releases
-# version: 1.4
-# date: 2022/03/29
+# URL: https://github.com/mriscoc/Ender3V2S1
+# Miguel A. Risco-Castillo
+# version: 1.5
+# date: 2022/05/29
 #
 # Contains code from the jpg re-encoder thumbnail post processor script:
 # github.com/alexqzd/Marlin/blob/Gcode-preview/Display%20firmware/gcode_thumb_to_jpg.py
@@ -20,11 +21,11 @@ import subprocess
 try:
     from PIL import Image
 except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow"])
+    subprocess.check_call([sys.executable, "-m", "pip3", "install", "Pillow"])
     from PIL import Image
     
 def install(package):
-    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+    subprocess.check_call([sys.executable, "-m", "pip3", "install", package])
 
 # Get the g-code source file name
 sourceFile = sys.argv[1]
@@ -93,23 +94,27 @@ maxx = 0
 maxy = 0
 maxz = 0
 
-with open(sourceFile, "w") as of:
-# Write header values
-    if ph is not None : of.write(ph[0])
-    of.write(';FLAVOR:Marlin\n')
-    of.write(';TIME:{:d}\n'.format(time))
-    of.write(';Filament used: {:.6f}\n'.format(filament))
-    of.write(';Layer height: {:.2f}\n'.format(layer))
-    of.write(';MINX:{:.3f}\n'.format(minx))
-    of.write(';MINY:{:.3f}\n'.format(miny))
-    of.write(';MINZ:{:.3f}\n'.format(minz))
-    of.write(';MAXX:{:.3f}\n'.format(maxx))
-    of.write(';MAXY:{:.3f}\n'.format(maxy))
-    of.write(';MAXZ:{:.3f}\n'.format(maxz))
-    of.write(';POSTPROCESSED\n')
-    of.write(';Header generated for The Ender3v2 Professional Firmware\n')
-    of.write(';https://github.com/mriscoc/Marlin_Ender3v2\n\n')
-    of.write(lines)
-
-of.close()
-f.close()
+try:
+    with open(sourceFile, "w+") as of:
+    # Write header values
+        if ph is not None : of.write(ph[0])
+        of.write(';FLAVOR:Marlin\n')
+        of.write(';TIME:{:d}\n'.format(time))
+        of.write(';Filament used: {:.6f}\n'.format(filament))
+        of.write(';Layer height: {:.2f}\n'.format(layer))
+        of.write(';MINX:{:.3f}\n'.format(minx))
+        of.write(';MINY:{:.3f}\n'.format(miny))
+        of.write(';MINZ:{:.3f}\n'.format(minz))
+        of.write(';MAXX:{:.3f}\n'.format(maxx))
+        of.write(';MAXY:{:.3f}\n'.format(maxy))
+        of.write(';MAXZ:{:.3f}\n'.format(maxz))
+        of.write(';POSTPROCESSED\n')
+        of.write(';Header generated for The Ender3v2 Professional Firmware\n')
+        of.write(';https://github.com/mriscoc/Marlin_Ender3v2\n\n')
+        of.write(lines)
+except:
+    print('Error writing output file')
+    input()
+finally:
+    of.close()
+    f.close()
