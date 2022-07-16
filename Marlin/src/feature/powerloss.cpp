@@ -44,10 +44,6 @@ uint32_t PrintJobRecovery::cmd_sdpos, // = 0
   bool PrintJobRecovery::dwin_flag; // = false
 #endif
 
-#if ProUIex
-  #include "../lcd/e3v2/proui/proui.h"
-#endif
-
 #include "../sd/cardreader.h"
 #include "../lcd/marlinui.h"
 #include "../gcode/queue.h"
@@ -112,13 +108,18 @@ void PrintJobRecovery::changed() {
  *
  * If a saved state exists send 'M1000 S' to initiate job recovery.
  */
-void PrintJobRecovery::check() {
+bool PrintJobRecovery::check() {
   //if (!card.isMounted()) card.mount();
+  bool success = false;
   if (card.isMounted()) {
     load();
-    if (!valid()) return cancel();
-    queue.inject(F("M1000S"));
+    success = valid();
+    if (!success)
+      cancel();
+    else
+      queue.inject(F("M1000S"));
   }
+  return success;
 }
 
 /**

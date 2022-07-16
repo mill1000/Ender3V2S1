@@ -92,7 +92,7 @@ void ESDiagClass::Update() {
     ES_REPORT(Z_MIN);
   #endif
   #if HAS_FILAMENT_SENSOR
-    draw_es_state(READ(FIL_RUNOUT1_PIN) != TERN(ProUIex, HMI_data.Runout_active_state, FIL_RUNOUT1_STATE));
+    draw_es_state(READ(FIL_RUNOUT1_PIN) != TERN(ProUIex, PRO_data.Runout_active_state, FIL_RUNOUT1_STATE));
   #endif
   DWIN_UpdateLCD();
 }

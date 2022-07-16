@@ -1,8 +1,8 @@
 /**
  * DWIN Enhanced implementation for PRO UI
  * Author: Miguel A. Risco-Castillo (MRISCOC)
- * Version: 3.17.1
- * Date: 2022/04/12
+ * Version: 3.18.1
+ * Date: 2022/07/05
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -19,17 +19,16 @@
  *
  */
 
-#include "../../../inc/MarlinConfigPre.h"
+#include "../../../inc/MarlinConfig.h"
 
 #if ENABLED(DWIN_LCD_PROUI)
 
-#include "../../../inc/MarlinConfig.h"
+#include "dwin_defines.h"
 #include "dwin_lcd.h"
 #include "dwinui.h"
-#include "dwin_defines.h"
 
 //#define DEBUG_OUT 1
-#include "../../../core/debug_out.h"
+//#include "../../../core/debug_out.h"
 
 xy_int_t DWINUI::cursor = { 0 };
 uint16_t DWINUI::pencolor = Color_White;
@@ -39,13 +38,15 @@ uint16_t DWINUI::buttoncolor = Def_Button_Color;
 uint8_t  DWINUI::font = font8x16;
 FSTR_P const DWINUI::Author = F(STRING_CONFIG_H_AUTHOR);
 
-void (*DWINUI::onTitleDraw)(TitleClass* title)=nullptr;
+void (*DWINUI::onTitleDraw)(TitleClass* title) = nullptr;
 
 void DWINUI::init() {
   delay(750);   // Delay for wait to wakeup screen
-  const bool hs = DWIN_Handshake();
-  TERN_(DEBUG_DWIN, SERIAL_ECHOPGM("DWIN_Handshake ");)
-  TERN(DEBUG_DWIN, SERIAL_ECHOLNF(hs ? F("ok.") : F("error.")), UNUSED(hs));
+  const bool hs = DWIN_Handshake(); UNUSED(hs);
+  #if ENABLED(DEBUG_DWIN)
+    SERIAL_ECHOPGM("DWIN_Handshake ");
+    SERIAL_ECHOLNF(hs ? F("ok.") : F("error."));
+  #endif
   DWIN_Frame_SetDir(1);
   cursor.reset();
   pencolor = Color_White;
@@ -56,12 +57,12 @@ void DWINUI::init() {
 }
 
 // Set text/number font
-void DWINUI::setFont(uint8_t cfont) {
+void DWINUI::setFont(font_t cfont) {
   font = cfont;
 }
 
 // Get font character width
-uint8_t DWINUI::fontWidth(uint8_t cfont) {
+uint8_t DWINUI::fontWidth(font_t cfont) {
   switch (cfont) {
     case font6x12 : return 6;
     case font8x16 : return 8;
@@ -78,7 +79,7 @@ uint8_t DWINUI::fontWidth(uint8_t cfont) {
 }
 
 // Get font character height
-uint8_t DWINUI::fontHeight(uint8_t cfont) {
+uint8_t DWINUI::fontHeight(font_t cfont) {
   switch (cfont) {
     case font6x12 : return 12;
     case font8x16 : return 16;
@@ -142,7 +143,7 @@ void DWINUI::MoveBy(xy_int_t point) {
 }
 
 // Draw a Centered string using arbitrary x1 and x2 margins
-void DWINUI::Draw_CenteredString(bool bShow, uint8_t size, uint16_t color, uint16_t bColor, uint16_t x1, uint16_t x2, uint16_t y, const char * const string) {
+void DWINUI::Draw_CenteredString(bool bShow, font_t size, uint16_t color, uint16_t bColor, uint16_t x1, uint16_t x2, uint16_t y, const char * const string) {
   const uint16_t x = _MAX(0U, x2 + x1 - strlen_P(string) * fontWidth(size)) / 2 - 1;
   DWIN_Draw_String(bShow, size, color, bColor, x, y, string);
 }
@@ -185,7 +186,7 @@ void DWINUI::Draw_String(uint16_t color, const char * const string, uint16_t rli
 //  iNum: Number of digits
 //  x/y: Upper-left coordinate
 //  value: Integer value
-void DWINUI::Draw_Int(uint8_t bShow, bool signedMode, uint8_t size, uint16_t color, uint16_t bColor, uint8_t iNum, uint16_t x, uint16_t y, int32_t value) {
+void DWINUI::Draw_Int(uint8_t bShow, bool signedMode, font_t size, uint16_t color, uint16_t bColor, uint8_t iNum, uint16_t x, uint16_t y, int32_t value) {
   char nstr[10];
   sprintf_P(nstr, PSTR("%*li"), (signedMode ? iNum + 1 : iNum), value);
   DWIN_Draw_String(bShow, size, color, bColor, x, y, nstr);
@@ -201,7 +202,7 @@ void DWINUI::Draw_Int(uint8_t bShow, bool signedMode, uint8_t size, uint16_t col
 //  fNum: Number of decimal digits
 //  x/y: Upper-left coordinate
 //  value: float value
-void DWINUI::Draw_Float(uint8_t bShow, bool signedMode, uint8_t size, uint16_t color, uint16_t bColor, uint8_t iNum, uint8_t fNum, uint16_t x, uint16_t y, float value) {
+void DWINUI::Draw_Float(uint8_t bShow, bool signedMode, font_t size, uint16_t color, uint16_t bColor, uint8_t iNum, uint8_t fNum, uint16_t x, uint16_t y, float value) {
   char nstr[10];
   DWIN_Draw_String(bShow, size, color, bColor, x, y, dtostrf(value, iNum + (signedMode ? 2:1) + fNum, fNum, nstr));
 }

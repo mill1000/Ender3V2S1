@@ -1,8 +1,8 @@
 /**
  * Menu functions for ProUI
  * Author: Miguel A. Risco-Castillo
- * Version: 1.4.1
- * Date: 2022/04/14
+ * Version: 1.5.1
+ * Date: 2022/05/23
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as 
@@ -40,9 +40,11 @@ extern void (*onCursorDraw)(const int8_t line);
 // Auxiliary Macros ===========================================================
 
 // Create and add a MenuItem object to the menu array
-#define BACK_ITEM(back_function) MenuItemsAdd(ICON_Back, GET_TEXT_F(MSG_BUTTON_BACK), onDrawMenuItem, back_function)
+#define BACK_ITEM(H) MenuItemsAdd(ICON_Back, GET_TEXT_F(MSG_BUTTON_BACK), onDrawMenuItem, H)
 #define MENU_ITEM(V...) MenuItemsAdd(V)
 #define EDIT_ITEM(V...) MenuItemsAdd(V)
+#define MENU_ITEM_F(I,L,V...) MenuItemsAdd(I, GET_TEXT_F(L), V)
+#define EDIT_ITEM_F(I,L,V...) MenuItemsAdd(I, GET_TEXT_F(L), V)
 
 // Menu Classes ===============================================================
 
@@ -144,7 +146,7 @@ bool SetMenu(MenuClass* &menu, FSTR_P title, int8_t totalitems);
 void UpdateMenu(MenuClass* &menu);
 
 //Redraw the current Menu if it is valid
-void ReDrawMenu();
+void ReDrawMenu(bool force = false);
 
 // Clear MenuItems array and free MenuItems elements
 void MenuItemsClear();
