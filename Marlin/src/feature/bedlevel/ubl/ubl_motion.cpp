@@ -26,7 +26,6 @@
 
 #include "../bedlevel.h"
 #include "../../../module/planner.h"
-#include "../../../module/stepper.h"
 #include "../../../module/motion.h"
 
 #if ENABLED(DELTA)
@@ -424,10 +423,23 @@
       LIMIT(icell.x, 0, GRID_MAX_CELLS_X);
       LIMIT(icell.y, 0, GRID_MAX_CELLS_Y);
 
-      float z_x0y0 = z_values[icell.x  ][icell.y  ],  // z at lower left corner
-            z_x1y0 = z_values[icell.x+1][icell.y  ],  // z at upper left corner
-            z_x0y1 = z_values[icell.x  ][icell.y+1],  // z at lower right corner
-            z_x1y1 = z_values[icell.x+1][icell.y+1];  // z at upper right corner
+      const int8_t ncellx = _MIN(icell.x+1, GRID_MAX_CELLS_X),
+                   ncelly = _MIN(icell.y+1, GRID_MAX_CELLS_Y);
+      float z_x0y0 = z_values[icell.x][icell.y],  // z at lower left corner
+            z_x1y0 = z_values[ncellx ][icell.y],  // z at upper left corner
+            z_x0y1 = z_values[icell.x][ncelly ],  // z at lower right corner
+            z_x1y1 = z_values[ncellx ][ncelly ];  // z at upper right corner
+
+      // float z_x0y0 = z_values[icell.x  ][icell.y  ],  // z at lower left corner
+      //       z_x1y0 = z_values[icell.x+1][icell.y  ],  // z at upper left corner
+      //       z_x0y1 = z_values[icell.x  ][icell.y+1],  // z at lower right corner
+      //       z_x1y1 = z_values[icell.x+1][icell.y+1];  // z at upper right corner
+
+// SERIAL_ECHOLNPGM("icell.x: ", icell.x, " icell.y: ", icell.y);
+// SERIAL_ECHOLNPGM("z_x0y0: ", z_x0y0,);
+// SERIAL_ECHOLNPGM("z_x1y0: ", z_x1y0,);
+// SERIAL_ECHOLNPGM("z_x0y1: ", z_x0y1,);
+// SERIAL_ECHOLNPGM("z_x1y1: ", z_x1y1,);
 
       if (isnan(z_x0y0)) z_x0y0 = 0;              // ideally activating planner.leveling_active (G29 A)
       if (isnan(z_x1y0)) z_x1y0 = 0;              //   should refuse if any invalid mesh points
@@ -464,6 +476,9 @@
           TERN_(ENABLE_LEVELING_FADE_HEIGHT, * fade_scaling_factor); // apply fade factor to interpolated height
 
         const float oldz = raw.z; raw.z += z_cxcy;
+
+        LIMIT(raw.z, Z_PROBE_LOW_POINT, Z_MAX_POS);
+
         planner.buffer_line(raw, scaled_fr_mm_s, active_extruder, hints);
         raw.z = oldz;
 

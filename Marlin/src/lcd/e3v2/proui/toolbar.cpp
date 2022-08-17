@@ -1,8 +1,8 @@
 /**
  * ToolBar for PRO UI
  * Author: Miguel A. Risco-Castillo (MRISCOC)
- * version: 1.2.1
- * Date: 2022/07/10
+ * version: 1.3.1
+ * Date: 2022/08/05
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -19,13 +19,20 @@
  *
  */
 
-#include "../../../inc/MarlinConfigPre.h"
+#include "../../../inc/MarlinConfig.h"
 
 #if BOTH(DWIN_LCD_PROUI, HAS_TOOLBAR)
 
 #include "toolbar.h"
-#include "dwin.h"
+#include "toolbar_def.h"
 #include "menus.h"
+
+TBItem_t TBItem;
+ToolBarClass ToolBar;
+
+uint8_t ToolBarClass::OptCount() {
+  return COUNT(TBItemA);
+}
 
 void onDrawTBItem(MenuItemClass* menuitem, int8_t line) {
   const bool focused = (checkkey == Menu);
@@ -46,7 +53,7 @@ void Draw_ToolBar(bool force /*=false*/) {
     MenuItemsPrepare(TBMaxOpt);
     LOOP_L_N(i,TBMaxOpt) {
       TBGetItem(PRO_data.TBopt[i]);
-      if (TBItem.icon) MENU_ITEM(TBItem.icon, TBItem.caption, onDrawTBItem, TBItem.onClick);
+      if (TBItem.icon) MENU_ITEM_F(TBItem.icon, TBItem.caption, onDrawTBItem, TBItem.onClick);
     }
     ToolBar.onExit = &Exit_ToolBar;
   }
@@ -62,8 +69,16 @@ void UpdateTBSetupItem(MenuItemClass* menuitem, uint8_t val) {
 void DrawTBSetupItem(bool focused, uint8_t line) {
   const uint16_t ypos = MYPOS(line);
   DWINUI::Draw_Box(1, focused ? Color_Bg_Black : HMI_data.Background_Color, {15, ypos, DWIN_WIDTH - 15, MLINE - 1});
-  onDrawMenuItem(CurrentMenu->SelectedItem(), line);
+  onDrawMenuItem(static_cast<MenuItemClass*>(CurrentMenu->SelectedItem()), line);
   if (focused) DWINUI::Draw_Char(VALX + 24, MBASE(line), 18);
+}
+
+void TBGetItem(uint8_t item) {
+  const uint8_t N = ToolBar.OptCount() - 1;
+  if (WITHIN(item, 0, N))
+    TBItem = TBItemA[item];
+  else
+    TBItem = {0, GET_TEXT_F(MSG_OPTION_DISABLED), nullptr};
 }
 
 #endif // BOTH(DWIN_LCD_PROUI, HAS_TOOLBAR)

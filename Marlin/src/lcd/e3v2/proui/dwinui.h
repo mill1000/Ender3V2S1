@@ -85,6 +85,12 @@
 #define ICON_PIDcycles            ICON_ResumeEEPROM
 #define ICON_PIDValue             ICON_Contact
 #define ICON_PrintStats           ICON_PrintTime
+#define ICON_Preheat1             ICON_PLAPreheat
+#define ICON_Preheat2             ICON_ABSPreheat
+#define ICON_Preheat3             ICON_CustomPreheat
+#define ICON_Preheat4             ICON_CustomPreheat
+#define ICON_Preheat5             ICON_CustomPreheat
+#define ICON_Preheat6             ICON_CustomPreheat
 #define ICON_PrintStatsReset      ICON_RemainTime
 #define ICON_ProbeDeploy          ICON_SetEndTemp
 #define ICON_ProbeMargin          ICON_PrintSize
@@ -102,12 +108,27 @@
 #define ICON_Scolor               ICON_MaxSpeed
 #define ICON_SetBaudRate          ICON_Setspeed
 #define ICON_SetCustomPreheat     ICON_SetEndTemp
+#define ICON_SetPreheat1          ICON_SetPLAPreheat
+#define ICON_SetPreheat2          ICON_SetABSPreheat
+#define ICON_SetPreheat3          ICON_SetCustomPreheat
+#define ICON_SetPreheat4          ICON_SetCustomPreheat
+#define ICON_SetPreheat5          ICON_SetCustomPreheat
+#define ICON_SetPreheat6          ICON_SetCustomPreheat
 #define ICON_Sound                ICON_Cool
 #define ICON_TBSetup              ICON_Contact
 #define ICON_UBLActive            ICON_HotendTemp
+#define ICON_ZAfterHome           ICON_SetEndTemp
 
+//LED Lights
 #define ICON_CaseLight            ICON_Motion
 #define ICON_LedControl           ICON_Motion
+
+//MPC
+#define ICON_MPCNozzle            ICON_SetEndTemp
+#define ICON_MPCValue             ICON_Contact
+#define ICON_MPCHeater            ICON_Temperature
+#define ICON_MPCHeatCap           ICON_SetBedTemp
+#define ICON_MPCFan               ICON_FanSpeed
 
 // Buttons
 #define BTN_Continue          85

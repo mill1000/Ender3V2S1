@@ -33,6 +33,10 @@
   #include "../../feature/probe_temp_comp.h"
 #endif
 
+#if HAS_MULTI_HOTEND
+  #include "../../module/tool_change.h"
+#endif
+
 #if ENABLED(DWIN_LCD_PROUI)
   #include "../../lcd/marlinui.h"
 #endif
@@ -49,6 +53,11 @@
  */
 void GcodeSuite::G30() {
 
+  #if HAS_MULTI_HOTEND
+    const uint8_t old_tool_index = active_extruder;
+    tool_change(0);
+  #endif
+
   const xy_pos_t pos = { parser.linearval('X', current_position.x + probe.offset_xy.x),
                          parser.linearval('Y', current_position.y + probe.offset_xy.y) };
 
@@ -57,9 +66,8 @@ void GcodeSuite::G30() {
       SERIAL_ECHOLNF(GET_EN_TEXT_F(MSG_ZPROBE_OUT));
       LCD_MESSAGE(MSG_ZPROBE_OUT);
     #endif
-    return;
   }
-
+  else {
   // Disable leveling so the planner won't mess with us
   TERN_(HAS_LEVELING, set_bed_leveling_enabled(false));
 
@@ -91,6 +99,10 @@ void GcodeSuite::G30() {
     probe.move_z_after_probing();
 
   report_current_position();
+  }
+
+  // Restore the active tool
+  TERN_(HAS_MULTI_HOTEND, tool_change(old_tool_index));
 }
 
 #endif // HAS_BED_PROBE

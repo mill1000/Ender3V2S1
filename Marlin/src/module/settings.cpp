@@ -281,11 +281,11 @@ typedef struct SettingsDataStruct {
   //
   // X_AXIS_TWIST_COMPENSATION
   //
-    #if ENABLED(X_AXIS_TWIST_COMPENSATION)
+  #if ENABLED(X_AXIS_TWIST_COMPENSATION)
     float xatc_spacing;                                 // M423 X Z
     float xatc_start;
     xatc_array_t xatc_z_offset;
-    #endif
+  #endif
 
   //
   // AUTO_BED_LEVELING_UBL
@@ -2707,6 +2707,9 @@ void MarlinSettings::postprocess() {
     }
     reset();
     #if EITHER(EEPROM_AUTO_INIT, EEPROM_INIT_NOW)
+      #if ProUIex
+        reset();  // Ensure that ProUI values are reloaded after auto check.
+      #endif
       (void)save();
       SERIAL_ECHO_MSG("EEPROM Initialized");
     #endif

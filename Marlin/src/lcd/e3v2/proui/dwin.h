@@ -1,8 +1,8 @@
 /**
  * DWIN Enhanced implementation for PRO UI
  * Author: Miguel A. Risco-Castillo (MRISCOC)
- * Version: 3.17.3
- * Date: 2022/04/08
+ * Version: 3.18.3
+ * Date: 2022/08/08
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -27,21 +27,18 @@
 #include "../common/encoder.h"
 #include "../../../libs/BL24CXX.h"
 
-#if DISABLED(PROBE_MANUALLY) && ANY(AUTO_BED_LEVELING_BILINEAR, AUTO_BED_LEVELING_LINEAR, AUTO_BED_LEVELING_3POINT, AUTO_BED_LEVELING_UBL)
-  #define HAS_ONESTEP_LEVELING 1
-#endif
-
-#if !HAS_BED_PROBE && ENABLED(BABYSTEPPING)
-  #define JUST_BABYSTEP 1
-#endif
-
-#if ANY(BABYSTEPPING, HAS_BED_PROBE, HAS_WORKSPACE_OFFSET)
-  #define HAS_ZOFFSET_ITEM 1
-#endif
-
 #if HAS_CGCODE
   #include "custom_gcodes.h"
 #endif
+
+namespace GET_LANG(LCD_LANGUAGE) {
+  #define _MSG_PREHEAT(N) \
+    LSTR MSG_PREHEAT_##N                  = _UxGT("Preheat ") PREHEAT_## N ##_LABEL; \
+    LSTR MSG_PREHEAT_## N ##_SETTINGS     = _UxGT("Preheat ") PREHEAT_## N ##_LABEL _UxGT(" Conf");
+  #if PREHEAT_COUNT > 3
+    REPEAT_S(4, PREHEAT_COUNT, _MSG_PREHEAT)
+  #endif
+}
 
 enum processID : uint8_t {
   // Process ID
@@ -52,7 +49,6 @@ enum processID : uint8_t {
   SetIntNoDraw,
   SetFloat,
   SetPFloat,
-  SelectFile,
   PrintProcess,
   Popup,
   Leveling,
@@ -63,24 +59,87 @@ enum processID : uint8_t {
   WaitResponse,
   Homing,
   PidProcess,
+  MPCProcess,
   NothingToDo
 };
 
-enum pidresult_t : uint8_t {
-  PID_BAD_EXTRUDER_NUM,
-  PID_TEMP_TOO_HIGH,
-  PID_TUNING_TIMEOUT,
-  PID_EXTR_START,
-  PID_BED_START,
-  PID_DONE
-};
+#if HAS_PID_HEATING || ENABLED(MPCTEMP)
+  enum tempcontrol_t : uint8_t {
+  #if HAS_PID_HEATING
+    PID_BAD_EXTRUDER_NUM = 0,
+    PID_TEMP_TOO_HIGH,
+    PID_TUNING_TIMEOUT,
+    PID_EXTR_START,
+    PID_BED_START,
+    PID_DONE,
+  #endif
+  #if ENABLED(MPCTEMP)
+    MPCTEMP_START = 0,
+    MPC_TEMP_ERROR,
+    MPC_INTERRUPTED,
+    MPC_DONE,
+  #endif
+  };
+#endif
 
 #define DWIN_CHINESE 123
 #define DWIN_ENGLISH 0
 
 typedef struct {
+  // Color settings
+  uint16_t Background_Color = Def_Background_Color;
+  uint16_t Cursor_color = Def_Cursor_color;
+  uint16_t TitleBg_color = Def_TitleBg_color;
+  uint16_t TitleTxt_color = Def_TitleTxt_color;
+  uint16_t Text_Color = Def_Text_Color;
+  uint16_t Selected_Color = Def_Selected_Color;
+  uint16_t SplitLine_Color = Def_SplitLine_Color;
+  uint16_t Highlight_Color = Def_Highlight_Color;
+  uint16_t StatusBg_Color = Def_StatusBg_Color;
+  uint16_t StatusTxt_Color = Def_StatusTxt_Color;
+  uint16_t PopupBg_color = Def_PopupBg_color;
+  uint16_t PopupTxt_Color = Def_PopupTxt_Color;
+  uint16_t AlertBg_Color = Def_AlertBg_Color;
+  uint16_t AlertTxt_Color = Def_AlertTxt_Color;
+  uint16_t PercentTxt_Color = Def_PercentTxt_Color;
+  uint16_t Barfill_Color = Def_Barfill_Color;
+  uint16_t Indicator_Color = Def_Indicator_Color;
+  uint16_t Coordinate_Color = Def_Coordinate_Color;
+  // Temperatures
+  #if HAS_HOTEND && ENABLED(PIDTEMP)
+    int16_t HotendPidT = DEF_HOTENDPIDT;
+  #endif
+  #if HAS_HEATED_BED && ENABLED(PIDTEMPBED)
+    int16_t BedPidT = DEF_BEDPIDT;
+  #endif
+  #if (HAS_HOTEND || HAS_HEATED_BED) && HAS_PID_HEATING
+    int16_t PidCycles = DEF_PIDCYCLES;
+  #endif
+  #if ENABLED(PREVENT_COLD_EXTRUSION)
+    int16_t ExtMinT = EXTRUDE_MINTEMP;
+  #endif
+  int16_t BedLevT = LEVELING_BED_TEMP;
+  TERN_(BAUD_RATE_GCODE, bool Baud115K = (BAUDRATE == 115200));
+  bool FullManualTramming = false;
+  bool MediaAutoMount = ENABLED(HAS_SD_EXTENDER);
+  #if BOTH(INDIVIDUAL_AXIS_HOMING_SUBMENU, MESH_BED_LEVELING)
+    uint8_t z_after_homing = DEF_Z_AFTER_HOMING;
+  #endif
+  #if DISABLED(HAS_BED_PROBE)
+    float ManualZOffset = 0;
+  #endif
+  // Led
+  #if BOTH(LED_CONTROL_MENU, HAS_COLOR_LEDS)
+    uint32_t LED_Color = Def_Leds_Color;
+  #endif
+} HMI_data_t;
+
+extern HMI_data_t HMI_data;
+static constexpr size_t eeprom_data_size = sizeof(HMI_data_t) + TERN0(ProUIex, sizeof(PRO_data_t));
+
+typedef struct {
   int8_t Color[3];                    // Color components
-  pidresult_t pidresult   = PID_DONE;
+  TERN_(HAS_PID_HEATING, tempcontrol_t pidresult   = PID_DONE);
   uint8_t Select          = 0;        // Auxiliary selector variable
   AxisEnum axis           = X_AXIS;   // Axis Select
 } HMI_value_t;
@@ -96,6 +155,7 @@ typedef struct {
   bool select_flag:1;   // Popup button selected
   bool home_flag:1;     // homing in course
   bool heat_flag:1;     // 0: heating done  1: during heating
+  bool config_flag:1; // SD G-code file is a Configuration file
   #if ProUIex && HAS_LEVELING
     bool cancel_abl:1;  // cancel current abl
   #endif
@@ -115,6 +175,7 @@ extern millis_t dwin_heat_time;
 #endif
 
 // Tool Functions
+uint32_t GetHash(char * str);
 #if ENABLED(EEPROM_SETTINGS)
   void WriteEeprom();
   void ReadEeprom();
@@ -128,15 +189,14 @@ void DisableMotors();
 void AutoLev();
 void AutoHome();
 #if HAS_PREHEAT
-  void DoPreheat0();
-  void DoPreheat1();
-  void DoPreheat2();
+  #define _DOPREHEAT(N) void DoPreheat##N();
+  REPEAT_1(PREHEAT_COUNT, _DOPREHEAT)
 #endif
 void DoCoolDown();
-#if HAS_HOTEND
+#if HAS_HOTEND  && ENABLED(PIDTEMP)
   void HotendPID();
 #endif
-#if HAS_HEATED_BED
+#if HAS_HEATED_BED && ENABLED(PIDTEMPBED)
   void BedPID();
 #endif
 #if ENABLED(BAUD_RATE_GCODE)
@@ -163,6 +223,9 @@ void ParkHead();
 #if ENABLED(HOST_SHUTDOWN_MENU_ITEM) && defined(SHUTDOWN_ACTION)
   void HostShutDown();
 #endif
+#if !HAS_PROBE
+  void HomeZandDisable();
+#endif
 
 // Other
 void Goto_PrintProcess();
@@ -181,7 +244,6 @@ void HMI_Printing();        // Print page
 void HMI_ReturnScreen();    // Return to previous screen before popups
 void HMI_WaitForUser();
 void HMI_SaveProcessID(const uint8_t id);
-void HMI_SDCardInit();
 void HMI_SDCardUpdate();
 void EachMomentUpdate();
 void update_variable();
@@ -195,7 +257,6 @@ void DWIN_HomingDone();
 #endif
 void DWIN_LevelingStart();
 void DWIN_LevelingDone();
-void DWIN_PidTuning(pidresult_t result);
 void DWIN_Print_Started(const bool sd=false);
 void DWIN_Print_Pause();
 void DWIN_Print_Resume();
@@ -242,6 +303,7 @@ inline void DWIN_Gcode(const int16_t codenum) { TERN_(HAS_CGCODE, custom_gcode(c
 #endif
 
 // Menu drawing functions
+void Draw_Print_File_Menu();
 void Draw_Control_Menu();
 void Draw_AdvancedSettings_Menu();
 void Draw_Prepare_Menu();
@@ -274,12 +336,6 @@ void Draw_Motion_Menu();
 #if ENABLED(MESH_BED_LEVELING)
   void Draw_ManualMesh_Menu();
 #endif
-#if HAS_HOTEND
-  void Draw_Preheat1_Menu();
-  void Draw_Preheat2_Menu();
-  void Draw_Preheat3_Menu();
-  void Draw_HotendPID_Menu();
-#endif
 void Draw_Temperature_Menu();
 void Draw_MaxSpeed_Menu();
 void Draw_MaxAccel_Menu();
@@ -287,9 +343,6 @@ void Draw_MaxAccel_Menu();
   void Draw_MaxJerk_Menu();
 #endif
 void Draw_Steps_Menu();
-#if HAS_HEATED_BED
-  void Draw_BedPID_Menu();
-#endif
 #if EITHER(HAS_BED_PROBE, BABYSTEPPING)
   void Draw_ZOffsetWiz_Menu();
 #endif
@@ -305,10 +358,24 @@ void Draw_Steps_Menu();
   void Draw_EditMesh_Menu();
 #endif
 
+//PID
+void DWIN_PidTuning(tempcontrol_t result);
+#if ENABLED(PIDTEMP)
+  void Draw_HotendPID_Menu();
+#endif
+#if ENABLED(PIDTEMPBED)
+  void Draw_BedPID_Menu();
+#endif
+
+//MPC
+#if ENABLED(MPCTEMP)
+  void DWIN_MPCTuning(tempcontrol_t result);
+  void Draw_HotendMPC_Menu();
+#endif
+
 // ToolBar
 #if HAS_TOOLBAR
   void Draw_TBSetup_Menu();
-  void TBGetItem(uint8_t item);
   void Goto_ToolBar();
   void Exit_ToolBar();
 #endif

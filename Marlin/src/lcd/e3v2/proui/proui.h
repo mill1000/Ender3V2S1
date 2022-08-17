@@ -39,7 +39,7 @@ constexpr int16_t DEF_Y_MIN_POS = Y_MIN_POS;
 constexpr int16_t DEF_X_MAX_POS = X_MAX_POS;
 constexpr int16_t DEF_Y_MAX_POS = Y_MAX_POS;
 constexpr int16_t DEF_Z_MAX_POS = Z_MAX_POS;
-constexpr bool DEF_INVERT_E0_DIR = INVERT_E0_DIR;
+TERN_(HAS_EXTRUDERS, constexpr bool DEF_INVERT_E0_DIR = INVERT_E0_DIR);
 
 #define DEF_NOZZLE_PARK_POINT {240, 220, 20}
 
@@ -83,13 +83,9 @@ constexpr bool DEF_INVERT_E0_DIR = INVERT_E0_DIR;
   #endif
 #endif
 
-#define DEF_FIL_MOTION_SENSOR false
+#define DEF_FIL_MOTION_SENSOR ENABLED(FILAMENT_MOTION_SENSOR)
 
 typedef struct {
-  TERN_(HAS_FILAMENT_SENSOR, bool Runout_active_state = FIL_RUNOUT_STATE);
-  #if ENABLED(NOZZLE_PARK_FEATURE)
-    xyz_int_t Park_point = DEF_NOZZLE_PARK_POINT;
-  #endif
   int16_t x_bed_size = DEF_X_BED_SIZE;
   int16_t y_bed_size = DEF_Y_BED_SIZE;
   int16_t x_min_pos = DEF_X_MIN_POS;
@@ -108,12 +104,18 @@ typedef struct {
     uint16_t zprobefeedslow = DEF_Z_PROBE_FEEDRATE_SLOW;
     uint8_t multiple_probing = MULTIPLE_PROBING;
   #endif
-  bool Invert_E0 = DEF_INVERT_E0_DIR;
-  bool FilamentMotionSensor = DEF_FIL_MOTION_SENSOR;
+  TERN_(HAS_EXTRUDERS, bool Invert_E0 = DEF_INVERT_E0_DIR);
+  #if ENABLED(NOZZLE_PARK_FEATURE)
+    xyz_int_t Park_point = DEF_NOZZLE_PARK_POINT;
+  #endif
+  #if HAS_FILAMENT_SENSOR
+    bool Runout_active_state = FIL_RUNOUT_STATE;
+    bool FilamentMotionSensor = DEF_FIL_MOTION_SENSOR;
+  #endif
   #if HAS_TOOLBAR
     uint8_t TBopt[TBMaxOpt] = DEF_TBOPT;
   #endif
-  celsius_t hotend_maxtemp = HEATER_0_MAXTEMP;
+  TERN_(HAS_HOTEND, celsius_t hotend_maxtemp = HEATER_0_MAXTEMP);
 } PRO_data_t;
 extern PRO_data_t PRO_data;
 
@@ -156,12 +158,12 @@ public:
   static void C125();
   static void C125_report(const bool forReplay=true);
 #endif
+#if HAS_EXTRUDERS
   static void C562();
   static void C562_report(const bool forReplay=true);
-#if HAS_BED_PROBE
+#endif
   static void C851();
   static void C851_report(const bool forReplay=true);
-#endif
 #if HAS_TOOLBAR
   static void C810();
   static void C810_report(const bool forReplay=true);
@@ -172,7 +174,7 @@ public:
   static void SetData();
   static void LoadSettings();
   #if EITHER(AUTO_BED_LEVELING_BILINEAR, MESH_BED_LEVELING)
-    static float getZvalues(const uint8_t sx, const uint8_t x, const uint8_t y, const float *values);
+    static float getZvalues(const uint8_t sy, const uint8_t x, const uint8_t y, const float *values);
   #endif
 };
 
