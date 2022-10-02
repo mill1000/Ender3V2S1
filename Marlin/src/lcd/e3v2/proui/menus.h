@@ -1,8 +1,8 @@
 /**
  * Menu functions for ProUI
  * Author: Miguel A. Risco-Castillo
- * Version: 1.7.1
- * Date: 2022/08/11
+ * Version: 1.8.1
+ * Date: 2022/09/29
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as 
@@ -37,8 +37,6 @@ typedef struct {
 } MenuData_t;
 
 extern MenuData_t MenuData;
-extern void (*onCursorErase)(const int8_t line);
-extern void (*onCursorDraw)(const int8_t line);
 
 // Auxiliary Macros ===========================================================
 
@@ -111,7 +109,6 @@ public:
 };
 extern MenuClass *CurrentMenu;
 extern MenuClass *PreviousMenu;
-extern void (*onMenuDraw)(MenuClass* menu);
 
 // Menuitem Drawing functions =================================================
 
@@ -123,6 +120,7 @@ void Erase_Menu_Text(const int8_t line);
 void Draw_Menu_Line(const uint8_t line, const uint8_t icon=0, const char * const label=nullptr, bool more=false, bool selected=false);
 void Draw_Menu_Line(const uint8_t line, const uint8_t icon=0, FSTR_P label=nullptr, bool more=false, bool selected=false);
 void Draw_Chkb_Line(const uint8_t line, const bool checked);
+void Show_Chkb_Line(const uint8_t line, const bool checked);
 void Draw_Menu_IntValue(uint16_t bcolor, const uint8_t line, uint8_t iNum, const int32_t value=0);
 void onDrawMenuItem(MenuItemClass* menuitem, int8_t line);
 void onDrawSubMenu(MenuItemClass* menuitem, int8_t line);
@@ -158,6 +156,9 @@ void HMI_SetPInt();
 void HMI_SetPFloat();
 
 // Menu auxiliary functions ===================================================
+
+// Initialize menu
+void InitMenu();
 
 // Create a new menu
 bool SetMenu(MenuClass* &menu, FSTR_P title, int8_t totalitems);

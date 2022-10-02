@@ -256,7 +256,7 @@ public:
 
   // Float removes 'E' to prevent scientific notation interpretation
   static float value_float() {
-    if (value_ptr) {
+    if (!value_ptr) return 0;
       char *e = value_ptr;
       for (;;) {
         const char c = *e;
@@ -271,8 +271,6 @@ public:
       }
       return strtof(value_ptr, nullptr);
     }
-    return 0;
-  }
 
   // Code value as a long or ulong
   static int32_t value_long() { return value_ptr ? strtol(value_ptr, nullptr, 10) : 0L; }

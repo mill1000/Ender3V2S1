@@ -1,8 +1,8 @@
 /**
  * DWIN Enhanced implementation for PRO UI
  * Author: Miguel A. Risco-Castillo (MRISCOC)
- * Version: 3.18.3
- * Date: 2022/08/08
+ * Version: 3.19.3
+ * Date: 2022/09/25
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -40,6 +40,34 @@ namespace GET_LANG(LCD_LANGUAGE) {
   #endif
 }
 
+const char DateTime[16+1] =
+{
+  // YY year
+  __DATE__[7], __DATE__[8],__DATE__[9], __DATE__[10],
+  // First month letter, Oct Nov Dec = '1' otherwise '0'
+  (__DATE__[0] == 'O' || __DATE__[0] == 'N' || __DATE__[0] == 'D') ? '1' : '0',
+  // Second month letter
+  (__DATE__[0] == 'J') ? ( (__DATE__[1] == 'a') ? '1' :       // Jan, Jun or Jul
+                          ((__DATE__[2] == 'n') ? '6' : '7') ) :
+  (__DATE__[0] == 'F') ? '2' :                                // Feb 
+  (__DATE__[0] == 'M') ? (__DATE__[2] == 'r') ? '3' : '5' :   // Mar or May
+  (__DATE__[0] == 'A') ? (__DATE__[1] == 'p') ? '4' : '8' :   // Apr or Aug
+  (__DATE__[0] == 'S') ? '9' :                                // Sep
+  (__DATE__[0] == 'O') ? '0' :                                // Oct
+  (__DATE__[0] == 'N') ? '1' :                                // Nov
+  (__DATE__[0] == 'D') ? '2' :                                // Dec
+  0,
+  // First day letter, replace space with digit
+  __DATE__[4]==' ' ? '0' : __DATE__[4],
+  // Second day letter
+  __DATE__[5],
+  // Separator
+  ' ','-',' ',
+  // Time
+  __TIME__[0],__TIME__[1],__TIME__[2],__TIME__[3],__TIME__[4],
+  '\0'
+};
+
 enum processID : uint8_t {
   // Process ID
   MainMenu,
@@ -66,15 +94,15 @@ enum processID : uint8_t {
 #if HAS_PID_HEATING || ENABLED(MPCTEMP)
   enum tempcontrol_t : uint8_t {
   #if HAS_PID_HEATING
-    PID_BAD_EXTRUDER_NUM = 0,
+    PIDTEMP_START = 0,
+    PIDTEMPBED_START,
+    PID_BAD_EXTRUDER_NUM,
     PID_TEMP_TOO_HIGH,
     PID_TUNING_TIMEOUT,
-    PID_EXTR_START,
-    PID_BED_START,
     PID_DONE,
   #endif
   #if ENABLED(MPCTEMP)
-    MPCTEMP_START = 0,
+    MPCTEMP_START,
     MPC_TEMP_ERROR,
     MPC_INTERRUPTED,
     MPC_DONE,
@@ -145,17 +173,15 @@ typedef struct {
 } HMI_value_t;
 
 typedef struct {
+  bool printing_flag:1; // sd or host printing
+  bool abort_flag:1;    // sd or host was aborted
+  bool pause_flag:1;    // printing is paused
   bool percent_flag:1;  // percent was override by M73
   bool remain_flag:1;   // remain was override by M73
-  bool pause_flag:1;    // printing is paused
-  bool pause_action:1;  // flag a pause action
-  bool abort_flag:1;    // printing is aborting
-  bool abort_action:1;  // flag a aborting action
-  bool print_finish:1;  // print was finished
   bool select_flag:1;   // Popup button selected
   bool home_flag:1;     // homing in course
   bool heat_flag:1;     // 0: heating done  1: during heating
-  bool config_flag:1; // SD G-code file is a Configuration file
+  bool config_flag:1;   // SD G-code file is a Configuration file
   #if ProUIex && HAS_LEVELING
     bool cancel_abl:1;  // cancel current abl
   #endif
@@ -223,7 +249,7 @@ void ParkHead();
 #if ENABLED(HOST_SHUTDOWN_MENU_ITEM) && defined(SHUTDOWN_ACTION)
   void HostShutDown();
 #endif
-#if !HAS_PROBE
+#if !HAS_BED_PROBE
   void HomeZandDisable();
 #endif
 
@@ -257,7 +283,7 @@ void DWIN_HomingDone();
 #endif
 void DWIN_LevelingStart();
 void DWIN_LevelingDone();
-void DWIN_Print_Started(const bool sd=false);
+void DWIN_Print_Started();
 void DWIN_Print_Pause();
 void DWIN_Print_Resume();
 void DWIN_Print_Finished();

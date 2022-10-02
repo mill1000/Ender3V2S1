@@ -486,7 +486,7 @@ inline void manage_inactivity(const bool no_stepper_sleep=false) {
     }
   #endif
 
-  #if HAS_FREEZE_PIN
+  #if ENABLED(FREEZE_FEATURE)
     stepper.frozen = READ(FREEZE_PIN) == FREEZE_STATE;
   #endif
 
@@ -1275,24 +1275,19 @@ void setup() {
   if (mcu & RST_WATCHDOG)  SERIAL_ECHOLNPGM(STR_WATCHDOG_RESET);
   if (mcu & RST_SOFTWARE)  SERIAL_ECHOLNPGM(STR_SOFTWARE_RESET);
 
-  // Identify myself as Marlin x.x.x
-  SERIAL_ECHOLNPGM("Marlin " SHORT_BUILD_VERSION);
-  #if defined(STRING_DISTRIBUTION_DATE) && defined(STRING_CONFIG_H_AUTHOR)
-    #ifdef DWIN_LCD_PROUI
-      SERIAL_ECHO_MSG(
-        " Last Updated: " STRING_DISTRIBUTION_DATE
-      );
-      SERIAL_ECHO_START();
-      SERIAL_ECHO(" Author: ");
-      SERIAL_ECHOLNPGM_P(FTOP(DWINUI::Author));
-    #else
+  #if ProUIex
+    ProEx.C115();
+  #else
+    // Identify myself as Marlin x.x.x
+    SERIAL_ECHOLNPGM("Marlin " SHORT_BUILD_VERSION);
+    #if defined(STRING_DISTRIBUTION_DATE) && defined(STRING_CONFIG_H_AUTHOR)
       SERIAL_ECHO_MSG(
         " Last Updated: " STRING_DISTRIBUTION_DATE
         " | Author: " STRING_CONFIG_H_AUTHOR
       );
     #endif
+    SERIAL_ECHO_MSG(" Compiled: " __DATE__);
   #endif
-  SERIAL_ECHO_MSG(" Compiled: " __DATE__);
   SERIAL_ECHO_MSG(STR_FREE_MEMORY, hal.freeMemory(), STR_PLANNER_BUFFER_BYTES, sizeof(block_t) * (BLOCK_BUFFER_SIZE));
 
   // Some HAL need precise delay adjustment

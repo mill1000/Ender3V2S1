@@ -1,8 +1,8 @@
 /**
  * Professional Firmware UI extensions
  * Author: Miguel A. Risco-Castillo
- * Version: 1.3.0
- * Date: 2022/06/17
+ * Version: 1.4.0
+ * Date: 2022/09/29
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -39,9 +39,12 @@ constexpr int16_t DEF_Y_MIN_POS = Y_MIN_POS;
 constexpr int16_t DEF_X_MAX_POS = X_MAX_POS;
 constexpr int16_t DEF_Y_MAX_POS = Y_MAX_POS;
 constexpr int16_t DEF_Z_MAX_POS = Z_MAX_POS;
-TERN_(HAS_EXTRUDERS, constexpr bool DEF_INVERT_E0_DIR = INVERT_E0_DIR);
-
-#define DEF_NOZZLE_PARK_POINT {240, 220, 20}
+#if ENABLED(NOZZLE_PARK_FEATURE)
+  constexpr xyz_int_t DEF_NOZZLE_PARK_POINT = NOZZLE_PARK_POINT;
+#endif
+#if HAS_EXTRUDERS
+  constexpr bool DEF_INVERT_E0_DIR = INVERT_E0_DIR;
+#endif
 
 #if HAS_MESH
 
@@ -112,15 +115,16 @@ typedef struct {
     bool Runout_active_state = FIL_RUNOUT_STATE;
     bool FilamentMotionSensor = DEF_FIL_MOTION_SENSOR;
   #endif
+  TERN_(HAS_HOTEND, celsius_t hotend_maxtemp = HEATER_0_MAXTEMP);
   #if HAS_TOOLBAR
     uint8_t TBopt[TBMaxOpt] = DEF_TBOPT;
   #endif
-  TERN_(HAS_HOTEND, celsius_t hotend_maxtemp = HEATER_0_MAXTEMP);
 } PRO_data_t;
 extern PRO_data_t PRO_data;
 
 class ProUIClass {
 public:
+  static void Init();
 #if HAS_BED_PROBE
   static void HeatedBed();
   static void StopLeveling();
@@ -133,9 +137,6 @@ public:
   static void ApplyRunoutActive();
   static void C412();
   static void C412_report(const bool forReplay=true);
-#endif
-#if ENABLED(POWER_LOSS_RECOVERY)
-  static void PowerLoss();
 #endif
 #if HAS_MESH
   static void DrawMeshPoints(bool selected, int8_t line, uint8_t MeshPoints);

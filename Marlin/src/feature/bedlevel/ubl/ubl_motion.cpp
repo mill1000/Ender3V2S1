@@ -430,11 +430,6 @@
             z_x0y1 = z_values[icell.x][ncelly ],  // z at lower right corner
             z_x1y1 = z_values[ncellx ][ncelly ];  // z at upper right corner
 
-      // float z_x0y0 = z_values[icell.x  ][icell.y  ],  // z at lower left corner
-      //       z_x1y0 = z_values[icell.x+1][icell.y  ],  // z at upper left corner
-      //       z_x0y1 = z_values[icell.x  ][icell.y+1],  // z at lower right corner
-      //       z_x1y1 = z_values[icell.x+1][icell.y+1];  // z at upper right corner
-
 // SERIAL_ECHOLNPGM("icell.x: ", icell.x, " icell.y: ", icell.y);
 // SERIAL_ECHOLNPGM("z_x0y0: ", z_x0y0,);
 // SERIAL_ECHOLNPGM("z_x1y0: ", z_x1y0,);

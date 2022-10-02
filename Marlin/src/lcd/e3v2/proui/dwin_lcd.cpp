@@ -1,8 +1,8 @@
 /**
  * DWIN Enhanced implementation for PRO UI
  * Author: Miguel A. Risco-Castillo (MRISCOC)
- * Version: 3.10.1
- * Date: 2022/03/06
+ * Version: 3.11.1
+ * Date: 2022/08/8
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as 
@@ -42,14 +42,6 @@ void DWIN_Draw_QR(uint8_t QR_Pixel, uint16_t x, uint16_t y, char *string) {
   DWIN_Byte(i, QR_Pixel);
   DWIN_Text(i, string);
   DWIN_Send(i);
-}
-
-// Draw an Icon with transparent background
-//  libID: Icon library ID
-//  picID: Icon ID
-//  x/y: Upper-left point
-void DWIN_ICON_Show(uint8_t libID, uint8_t picID, uint16_t x, uint16_t y) {
-  DWIN_ICON_Show(false, false, true, libID, picID, x, y);
 }
 
 // Copy area from current virtual display area to current screen

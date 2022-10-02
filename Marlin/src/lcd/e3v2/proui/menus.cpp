@@ -1,8 +1,8 @@
 /**
  * Menu functions for ProUI
  * Author: Miguel A. Risco-Castillo
- * Version: 1.7.1
- * Date: 2022/08/11
+ * Version: 1.8.1
+ * Date: 2022/09/29
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as 
@@ -34,9 +34,6 @@ int8_t MenuItemCount = 0;
 CustomMenuItemClass** MenuItems = nullptr;
 MenuClass *CurrentMenu = nullptr;
 MenuClass *PreviousMenu = nullptr;
-void (*onMenuDraw)(MenuClass* menu) = nullptr;
-void (*onCursorErase)(const int8_t line) = nullptr;
-void (*onCursorDraw)(const int8_t line) = nullptr;
 MenuData_t MenuData;
 
 // Menuitem Drawing functions =================================================
@@ -46,7 +43,11 @@ void Draw_Title(TitleClass* title) {
   if (title->frameid) 
     DWIN_Frame_AreaCopy(title->frameid, title->frame.left, title->frame.top, title->frame.right, title->frame.bottom, 14, (TITLE_HEIGHT - (title->frame.bottom - title->frame.top)) / 2 - 1);
   else
-    DWIN_Draw_String(false, DWIN_FONT_HEAD, HMI_data.TitleTxt_color, HMI_data.TitleBg_color, 14, (TITLE_HEIGHT - DWINUI::fontHeight(DWIN_FONT_HEAD)) / 2 - 1, title->caption);
+    #if ENABLED(TITLE_CENTERED)
+      DWINUI::Draw_CenteredString(false, DWIN_FONT_HEAD, HMI_data.TitleTxt_color, HMI_data.TitleBg_color, (TITLE_HEIGHT - DWINUI::fontHeight(DWIN_FONT_HEAD)) / 2 - 1, title->caption);
+    #else
+      DWIN_Draw_String(false, DWIN_FONT_HEAD, HMI_data.TitleTxt_color, HMI_data.TitleBg_color, 14, (TITLE_HEIGHT - DWINUI::fontHeight(DWIN_FONT_HEAD)) / 2 - 1, title->caption);
+    #endif
 }
 
 void Draw_Menu(MenuClass* menu) {
@@ -84,6 +85,11 @@ void Draw_Menu_Line(const uint8_t line, const uint8_t icon /*=0*/, FSTR_P label 
 
 void Draw_Chkb_Line(const uint8_t line, const bool checked) {
   DWINUI::Draw_Checkbox(HMI_data.Text_Color, HMI_data.Background_Color, VALX + 3 * DWINUI::fontWidth(), MBASE(line) - 1, checked);
+}
+
+void Show_Chkb_Line(const uint8_t line, const bool checked) {
+  DWINUI::Draw_Checkbox(HMI_data.Text_Color, HMI_data.Background_Color, VALX + 3 * DWINUI::fontWidth(), MBASE(line) - 1, checked);
+  DWIN_UpdateLCD();
 }
 
 void Draw_Menu_IntValue(uint16_t bcolor, const uint8_t line, uint8_t iNum, const int32_t value /*=0*/) {
@@ -334,10 +340,10 @@ MenuClass::MenuClass() {
 
 void MenuClass::draw() {
   MenuTitle.draw();
-  if (onMenuDraw != nullptr) onMenuDraw(this);
+  Draw_Menu(this);
   for (int8_t i = 0; i < MenuItemCount; i++)
     MenuItems[i]->draw(i - topline);
-  if (onCursorDraw != nullptr) onCursorDraw(line());
+  Draw_Menu_Cursor(line());
   DWIN_UpdateLCD();
 }
 
@@ -346,7 +352,7 @@ void MenuClass::onScroll(bool dir) {
   if (dir) sel++; else sel--;
   LIMIT(sel, 0, MenuItemCount - 1);
   if (sel != selected) {
-    if (onCursorErase != nullptr) onCursorErase(line());
+    Erase_Menu_Cursor(line());
     DWIN_UpdateLCD();
     if ((sel - topline) == TROWS) {
       DWIN_Frame_AreaMove(1, DWIN_SCROLL_UP, MLINE, DWINUI::backcolor, 0, TITLE_HEIGHT + 1, DWIN_WIDTH, STATUS_Y - 1);
@@ -359,7 +365,7 @@ void MenuClass::onScroll(bool dir) {
       MenuItems[sel]->draw(0);
     }
     selected = sel;
-    if (onCursorDraw != nullptr) onCursorDraw(line());
+    Draw_Menu_Cursor(line());
     DWIN_UpdateLCD();
   }
 }
@@ -484,6 +490,11 @@ MenuItemClass* EditItemAdd(uint8_t cicon, const char * const text, OnDrawItem on
     return MenuItemAdd(menuitem);
   }
   else return nullptr;
+}
+
+void InitMenu() {
+  PreviousMenu = nullptr;
+  InvalidateMenu();
 }
 
 bool SetMenu(MenuClass* &menu, FSTR_P title, int8_t totalitems) {

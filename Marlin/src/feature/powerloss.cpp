@@ -65,6 +65,10 @@ uint32_t PrintJobRecovery::cmd_sdpos, // = 0
 #define DEBUG_OUT ENABLED(DEBUG_POWER_LOSS_RECOVERY)
 #include "../core/debug_out.h"
 
+#if ENABLED(DWIN_LCD_PROUI)
+  #include "../lcd/e3v2/proui/dwin_popup.h"
+#endif
+
 PrintJobRecovery recovery;
 
 #ifndef POWER_LOSS_PURGE_LEN
@@ -544,8 +548,11 @@ void PrintJobRecovery::resume() {
     gcode.process_subcommands_now(F("G12"));
   #endif
 
-  #if ProUIex
-    ProEx.PowerLoss();
+  #if ENABLED(DWIN_LCD_PROUI) && DISABLED(NOZZLE_CLEAN_FEATURE)
+    // Parking head to allow clean
+    gcode.process_subcommands_now(F("G27"));
+    DWIN_Popup_Continue(ICON_BLTouch, GET_TEXT_F(MSG_NOZZLE_PARKED), GET_TEXT_F(MSG_NOZZLE_CLEAN));
+    wait_for_user_response();
   #endif
 
   // Move back over to the saved XY
