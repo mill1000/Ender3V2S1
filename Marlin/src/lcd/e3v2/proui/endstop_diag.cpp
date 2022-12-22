@@ -1,8 +1,8 @@
 /**
  * DWIN End Stops diagnostic page for PRO UI
  * Author: Miguel A. Risco-Castillo (MRISCOC)
- * Version: 1.2.3
- * Date: 2022/02/24
+ * Version: 1.3.3
+ * Date: 2022/10/07
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -92,7 +92,11 @@ void ESDiagClass::Update() {
     ES_REPORT(Z_MIN);
   #endif
   #if HAS_FILAMENT_SENSOR
-    draw_es_state(READ(FIL_RUNOUT1_PIN) != TERN(ProUIex, PRO_data.Runout_active_state, FIL_RUNOUT1_STATE));
+    #if ProUIex
+      draw_es_state(!FilamentSensorDevice::poll_runout_state(0));
+    #else
+      draw_es_state(READ(FIL_RUNOUT1_PIN) != FIL_RUNOUT1_STATE);
+    #endif
   #endif
   DWIN_UpdateLCD();
 }

@@ -1,8 +1,8 @@
 /**
  * Professional Firmware UI extensions
  * Author: Miguel A. Risco-Castillo
- * Version: 1.4.0
- * Date: 2022/09/29
+ * Version: 1.7.0
+ * Date: 2022/12/02
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -107,7 +107,9 @@ typedef struct {
     uint16_t zprobefeedslow = DEF_Z_PROBE_FEEDRATE_SLOW;
     uint8_t multiple_probing = MULTIPLE_PROBING;
   #endif
-  TERN_(HAS_EXTRUDERS, bool Invert_E0 = DEF_INVERT_E0_DIR);
+  #if HAS_EXTRUDERS
+    bool Invert_E0 = DEF_INVERT_E0_DIR;
+  #endif
   #if ENABLED(NOZZLE_PARK_FEATURE)
     xyz_int_t Park_point = DEF_NOZZLE_PARK_POINT;
   #endif
@@ -115,7 +117,9 @@ typedef struct {
     bool Runout_active_state = FIL_RUNOUT_STATE;
     bool FilamentMotionSensor = DEF_FIL_MOTION_SENSOR;
   #endif
-  TERN_(HAS_HOTEND, celsius_t hotend_maxtemp = HEATER_0_MAXTEMP);
+  #if HAS_HOTEND
+    celsius_t hotend_maxtemp = HEATER_0_MAXTEMP;
+  #endif
   #if HAS_TOOLBAR
     uint8_t TBopt[TBMaxOpt] = DEF_TBOPT;
   #endif
@@ -129,10 +133,11 @@ public:
   static void HeatedBed();
   static void StopLeveling();
   static bool QuitLeveling();
-  static bool LevelingDone();
+  static void MeshUpdate(const int8_t x, const int8_t y, const_float_t zval);
+  static void LevelingDone();
 #endif
 #if HAS_FILAMENT_SENSOR
-  static void SetRunoutState();
+  static void SetRunoutState(uint32_t ulPin);
   static void DrawRunoutActive(bool selected);
   static void ApplyRunoutActive();
   static void C412();
