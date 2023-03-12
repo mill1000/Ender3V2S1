@@ -1,8 +1,8 @@
 /**
  * DWIN Enhanced implementation for PRO UI
  * Author: Miguel A. Risco-Castillo (MRISCOC)
- * Version: 3.20.3
- * Date: 2022/10/26
+ * Version: 3.24.3
+ * Date: 2023/03/07
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -70,17 +70,16 @@ enum processID : uint8_t {
   #if HAS_PID_HEATING
     PIDTEMP_START = 0,
     PIDTEMPBED_START,
-    PID_BAD_EXTRUDER_NUM,
+    PID_BAD_HEATER_ID,
     PID_TEMP_TOO_HIGH,
     PID_TUNING_TIMEOUT,
-    PID_DONE,
   #endif
   #if ENABLED(MPCTEMP)
     MPCTEMP_START,
     MPC_TEMP_ERROR,
     MPC_INTERRUPTED,
-    MPC_DONE,
   #endif
+  AUTOTUNE_DONE
   };
 #endif
 
@@ -88,55 +87,38 @@ enum processID : uint8_t {
 #define DWIN_ENGLISH 0
 
 typedef struct {
-  // Color settings
-  uint16_t Background_Color = Def_Background_Color;
-  uint16_t Cursor_color = Def_Cursor_color;
-  uint16_t TitleBg_color = Def_TitleBg_color;
-  uint16_t TitleTxt_color = Def_TitleTxt_color;
-  uint16_t Text_Color = Def_Text_Color;
-  uint16_t Selected_Color = Def_Selected_Color;
-  uint16_t SplitLine_Color = Def_SplitLine_Color;
-  uint16_t Highlight_Color = Def_Highlight_Color;
-  uint16_t StatusBg_Color = Def_StatusBg_Color;
-  uint16_t StatusTxt_Color = Def_StatusTxt_Color;
-  uint16_t PopupBg_color = Def_PopupBg_color;
-  uint16_t PopupTxt_Color = Def_PopupTxt_Color;
-  uint16_t AlertBg_Color = Def_AlertBg_Color;
-  uint16_t AlertTxt_Color = Def_AlertTxt_Color;
-  uint16_t PercentTxt_Color = Def_PercentTxt_Color;
-  uint16_t Barfill_Color = Def_Barfill_Color;
-  uint16_t Indicator_Color = Def_Indicator_Color;
-  uint16_t Coordinate_Color = Def_Coordinate_Color;
-  // Temperatures
-  #if HAS_HOTEND && ENABLED(PIDTEMP)
-    int16_t HotendPidT = DEF_HOTENDPIDT;
-  #endif
-  #if HAS_HEATED_BED && ENABLED(PIDTEMPBED)
-    int16_t BedPidT = DEF_BEDPIDT;
-  #endif
-  #if (HAS_HOTEND || HAS_HEATED_BED) && HAS_PID_HEATING
-    int16_t PidCycles = DEF_PIDCYCLES;
-  #endif
-  #if ENABLED(PREVENT_COLD_EXTRUSION)
-    int16_t ExtMinT = EXTRUDE_MINTEMP;
-  #endif
-  int16_t BedLevT = LEVELING_BED_TEMP;
-  TERN_(BAUD_RATE_GCODE, bool Baud115K = (BAUDRATE == 115200));
-  bool FullManualTramming = false;
-  bool MediaAutoMount = ENABLED(HAS_SD_EXTENDER);
-  #if BOTH(INDIVIDUAL_AXIS_HOMING_SUBMENU, MESH_BED_LEVELING)
-    uint8_t z_after_homing = DEF_Z_AFTER_HOMING;
-  #endif
-  #if DISABLED(HAS_BED_PROBE)
-    float ManualZOffset = 0;
-  #endif
-  // Led
-  #if BOTH(LED_CONTROL_MENU, HAS_COLOR_LEDS)
-    uint32_t LED_Color = Def_Leds_Color;
-  #endif
-  #if ENABLED(ADAPTIVE_STEP_SMOOTHING)
-    bool AdaptiveStepSmoothing = true;
-  #endif
+  uint16_t Background_Color;
+  uint16_t Cursor_Color;
+  uint16_t TitleBg_Color;
+  uint16_t TitleTxt_Color;
+  uint16_t Text_Color;
+  uint16_t Selected_Color;
+  uint16_t SplitLine_Color;
+  uint16_t Highlight_Color;
+  uint16_t StatusBg_Color;
+  uint16_t StatusTxt_Color;
+  uint16_t PopupBg_Color;
+  uint16_t PopupTxt_Color;
+  uint16_t AlertBg_Color;
+  uint16_t AlertTxt_Color;
+  uint16_t PercentTxt_Color;
+  uint16_t Barfill_Color;
+  uint16_t Indicator_Color;
+  uint16_t Coordinate_Color;
+  int16_t HotendPidT;
+  int16_t BedPidT;
+  int16_t PidCycles;
+  int16_t ExtMinT;
+  int16_t BedLevT;
+  bool Baud115K;
+  bool FullManualTramming;
+  bool MediaSort;
+  bool MediaAutoMount;
+  uint8_t z_after_homing;
+  float ManualZOffset;
+  uint32_t Led_Color;
+  bool AdaptiveStepSmoothing;
+  bool EnablePreview;
 } HMI_data_t;
 
 extern HMI_data_t HMI_data;
@@ -144,7 +126,9 @@ static constexpr size_t eeprom_data_size = sizeof(HMI_data_t) + TERN0(ProUIex, s
 
 typedef struct {
   int8_t Color[3];                    // Color components
-  TERN_(HAS_PID_HEATING, tempcontrol_t pidresult   = PID_DONE);
+  #if ANY(HAS_PID_HEATING, MPCTEMP)
+    tempcontrol_t tempcontrol = AUTOTUNE_DONE;
+  #endif
   uint8_t Select          = 0;        // Auxiliary selector variable
   AxisEnum axis           = X_AXIS;   // Axis Select
 } HMI_value_t;
@@ -153,11 +137,8 @@ typedef struct {
   bool printing_flag:1; // sd or host printing
   bool abort_flag:1;    // sd or host was aborted
   bool pause_flag:1;    // printing is paused
-  bool percent_flag:1;  // percent was override by M73
-  bool remain_flag:1;   // remain was override by M73
   bool select_flag:1;   // Popup button selected
   bool home_flag:1;     // homing in course
-  bool heat_flag:1;     // 0: heating done  1: during heating
   bool config_flag:1;   // SD G-code file is a Configuration file
   #if ProUIex && HAS_LEVELING
     bool cancel_abl:1;  // cancel current abl
@@ -167,7 +148,6 @@ typedef struct {
 extern HMI_value_t HMI_value;
 extern HMI_flag_t HMI_flag;
 extern uint8_t checkkey;
-extern millis_t dwin_heat_time;
 
 // Popups
 #if HAS_HOTEND || HAS_HEATED_BED
@@ -196,10 +176,10 @@ void AutoHome();
   REPEAT_1(PREHEAT_COUNT, _DOPREHEAT)
 #endif
 void DoCoolDown();
-#if HAS_HOTEND  && ENABLED(PIDTEMP)
+#if ENABLED(PIDTEMP)
   void HotendPID();
 #endif
-#if HAS_HEATED_BED && ENABLED(PIDTEMPBED)
+#if ENABLED(PIDTEMPBED)
   void BedPID();
 #endif
 #if ENABLED(BAUD_RATE_GCODE)
@@ -218,15 +198,15 @@ void ParkHead();
   void ApplyLEDColor();
 #endif
 #if ENABLED(AUTO_BED_LEVELING_UBL)
-  void UBLTiltMesh();
+  void UBLMeshTilt();
   bool UBLValidMesh();
-  void UBLSaveMesh();
-  void UBLLoadMesh();
+  void UBLMeshSave();
+  void UBLMeshLoad();
 #endif
 #if ENABLED(HOST_SHUTDOWN_MENU_ITEM) && defined(SHUTDOWN_ACTION)
   void HostShutDown();
 #endif
-#if !HAS_BED_PROBE
+#if DISABLED(HAS_BED_PROBE)
   void HomeZandDisable();
 #endif
 
@@ -236,13 +216,11 @@ void Goto_Main_Menu();
 void Goto_Info_Menu();
 void Goto_PowerLossRecovery();
 void Goto_ConfirmToPrint();
-void DWIN_Draw_Dashboard(const bool with_update); // Status Area
 void Draw_Main_Area();      // Redraw main area
 void DWIN_DrawStatusLine(const char *text = ""); // Draw simple status text
-void DWIN_RedrawDash();    // Redraw Dash and Status line
-void DWIN_RedrawScreen();  // Redraw all screen elements
+void DWIN_RedrawDash();     // Redraw Dash and Status line
+void DWIN_RedrawScreen();   // Redraw all screen elements
 void HMI_MainMenu();        // Main process screen
-void HMI_SelectFile();      // File page
 void HMI_Printing();        // Print page
 void HMI_ReturnScreen();    // Return to previous screen before popups
 void HMI_WaitForUser();
@@ -268,7 +246,6 @@ void DWIN_Print_Aborted();
 #if HAS_FILAMENT_SENSOR
   void DWIN_FilamentRunout(const uint8_t extruder);
 #endif
-void DWIN_M73();
 void DWIN_Print_Header(const char *text);
 void DWIN_SetColorDefaults();
 void DWIN_ApplyColor();
@@ -283,7 +260,6 @@ inline void DWIN_Gcode(const int16_t codenum) { TERN_(HAS_CGCODE, custom_gcode(c
   void DWIN_Popup_Pause(FSTR_P const fmsg, uint8_t button=0);
   void Draw_Popup_FilamentPurge();
   void Goto_FilamentPurge();
-  void HMI_FilamentPurge();
 #endif
 
 // Utility and extensions
@@ -295,14 +271,8 @@ inline void DWIN_Gcode(const int16_t codenum) { TERN_(HAS_CGCODE, custom_gcode(c
 #if HAS_MESH
   void DWIN_MeshViewer();
 #endif
-#if HAS_GCODE_PREVIEW
-  void HMI_ConfirmToPrint();
-#endif
 #if HAS_ESDIAG
   void Draw_EndStopDiag();
-#endif
-#if ENABLED(PRINTCOUNTER)
-  void Draw_PrintStats();
 #endif
 
 // Menu drawing functions
@@ -358,13 +328,20 @@ void Draw_Steps_Menu();
 #if HAS_MESH
   void Draw_MeshSet_Menu();
   void Draw_MeshInset_Menu();
-  void Draw_EditMesh_Menu();
+  #if ENABLED(MESH_EDIT_MENU)
+    void Draw_EditMesh_Menu();
+  #endif
 #endif
 #if HAS_TRINAMIC_CONFIG
   void Draw_TrinamicConfig_menu();
 #endif
-//PID
-void DWIN_PidTuning(tempcontrol_t result);
+
+// PID
+#if HAS_PID_HEATING
+  #include "../../../module/temperature.h"
+  void DWIN_M303(const bool seenC, const int c, const bool seenS, const heater_id_t hid, const celsius_t temp);
+  void DWIN_PidTuning(tempcontrol_t result);
+#endif
 #if ENABLED(PIDTEMP)
   void Draw_HotendPID_Menu();
 #endif
@@ -372,7 +349,7 @@ void DWIN_PidTuning(tempcontrol_t result);
   void Draw_BedPID_Menu();
 #endif
 
-//MPC
+// MPC
 #if ENABLED(MPCTEMP)
   void DWIN_MPCTuning(tempcontrol_t result);
   void Draw_HotendMPC_Menu();

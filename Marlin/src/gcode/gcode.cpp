@@ -1087,7 +1087,7 @@ void GcodeSuite::process_parsed_command(const bool no_ok/*=false*/) {
         case 1001: M1001(); break;                                // M1001: [INTERNAL] Handle SD completion
       #endif
 
-      #if ENABLED(DGUS_LCD_UI_MKS)
+      #if DGUS_LCD_UI_MKS
         case 1002: M1002(); break;                                // M1002: [INTERNAL] Tool-change and Relative E Move
       #endif
 
@@ -1117,7 +1117,7 @@ void GcodeSuite::process_parsed_command(const bool no_ok/*=false*/) {
       case 'S': case 'P': case 'R': break;                        // Invalid S, P, R commands already filtered
     #endif
 
-    #if ENABLED(DWIN_LCD_PROUI)
+    #if BOTH(DWIN_LCD_PROUI, HAS_CGCODE)
       case 'C' : DWIN_Gcode(parser.codenum); break;               // ProUIex Cn: Custom Gcodes
     #endif
 
