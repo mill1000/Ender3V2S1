@@ -1,8 +1,8 @@
 /**
  * Professional Firmware UI extensions
  * Author: Miguel A. Risco-Castillo
- * Version: 1.8.0
- * Date: 2022/12/30
+ * Version: 1.10.0
+ * Date: 2023/05/18
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -67,7 +67,7 @@ constexpr int16_t DEF_MESH_MIN_X = MESH_MIN_X;
 constexpr int16_t DEF_MESH_MAX_X = MESH_MAX_X;
 constexpr int16_t DEF_MESH_MIN_Y = MESH_MIN_Y;
 constexpr int16_t DEF_MESH_MAX_Y = MESH_MAX_Y;
-#define MIN_MESH_INSET 5
+#define MIN_MESH_INSET TERN(HAS_BED_PROBE, PROBING_MARGIN, 5)
 #define MAX_MESH_INSET X_BED_SIZE
 constexpr int16_t DEF_PROBING_MARGIN = PROBING_MARGIN;
 #define MIN_PROBE_MARGIN 5
@@ -113,6 +113,9 @@ public:
   static bool QuitLeveling();
   static void MeshUpdate(const int8_t x, const int8_t y, const_float_t zval);
   static void LevelingDone();
+#endif
+#if HAS_MEDIA
+  static void C10();
 #endif
 #if HAS_FILAMENT_SENSOR
   static void SetRunoutState(uint32_t ulPin);

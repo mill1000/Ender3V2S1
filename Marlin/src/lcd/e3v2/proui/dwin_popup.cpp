@@ -1,8 +1,8 @@
 /**
  * DWIN Enhanced implementation for PRO UI
  * Author: Miguel A. Risco-Castillo (MRISCOC)
- * Version: 3.11.1
- * Date: 2022/02/28
+ * Version: 3.12.1
+ * Date: 2022/04/03
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as 
@@ -50,7 +50,7 @@ void DWIN_Popup_Continue(const uint8_t icon, FSTR_P const fmsg1, FSTR_P const fm
 }
 
 void DWIN_Popup_ConfirmCancel(const uint8_t icon, FSTR_P const fmsg2) {
-  DWIN_Draw_Popup(ICON_BLTouch, F("Please confirm"), fmsg2);
+  DWIN_Draw_Popup(icon, F("Please confirm"), fmsg2);
   DWINUI::Draw_Button(BTN_Confirm, 26, 280);
   DWINUI::Draw_Button(BTN_Cancel, 146, 280);
   Draw_Select_Highlight(HMI_flag.select_flag);

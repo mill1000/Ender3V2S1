@@ -59,20 +59,20 @@ void unified_bed_leveling::report_current_mesh() {
 
 void unified_bed_leveling::report_state() {
   echo_name();
-  SERIAL_ECHO_TERNARY(planner.leveling_active, " System v" UBL_VERSION " ", "", "in", "active\n");
+  serial_ternary(F(" System v" UBL_VERSION " "), planner.leveling_active, nullptr, F("in"), F("active\n"));
   serial_delay(50);
 }
 
 int8_t unified_bed_leveling::storage_slot;
 
-#if ProUIex
+#if PROUI_EX
   float unified_bed_leveling::z_values[GRID_LIMIT][GRID_LIMIT];
 #else
   float unified_bed_leveling::z_values[GRID_MAX_POINTS_X][GRID_MAX_POINTS_Y];
 #endif
 
 
-#if DISABLED(ProUIex)
+#if DISABLED(PROUI_EX)
   #define _GRIDPOS(A,N) (MESH_MIN_##A + N * (MESH_##A##_DIST))
 
   const float
@@ -174,7 +174,7 @@ static void serial_echo_column_labels(const uint8_t sp) {
 void unified_bed_leveling::display_map(const uint8_t map_type) {
   const bool was = gcode.set_autoreport_paused(true);
 
-  IF_DISABLED(ProUIex, constexpr) uint8_t eachsp = 1 + 6 + 1,                           // [-3.567]
+  IF_DISABLED(PROUI_EX, constexpr) uint8_t eachsp = 1 + 6 + 1,                           // [-3.567]
                     twixt = eachsp * (GRID_MAX_POINTS_X) - 9 * 2; // Leading 4sp, Coordinates 9sp each
 
   const bool human = !(map_type & 0x3), csv = map_type == 1, lcd = map_type == 2, comp = map_type & 0x4;

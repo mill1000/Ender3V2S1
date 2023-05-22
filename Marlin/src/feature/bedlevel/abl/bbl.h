@@ -35,7 +35,7 @@ private:
 
   #if ENABLED(ABL_BILINEAR_SUBDIVISION)
 
-    #if ProUIex
+    #if PROUI_EX
       #define ABL_GRID_POINTS_VIRT_N (GRID_LIMIT - 1) * (BILINEAR_SUBDIVISIONS) + 1
       #define ABL_GRID_POINTS_VIRT_X ABL_GRID_POINTS_VIRT_N
       #define ABL_GRID_POINTS_VIRT_Y ABL_GRID_POINTS_VIRT_N
@@ -48,10 +48,10 @@ private:
     static xy_pos_t grid_spacing_virt;
     static xy_float_t grid_factor_virt;
 
-    static float bed_level_virt_coord(const uint8_t x, const uint8_t y);
-    static float bed_level_virt_cmr(const float p[4], const uint8_t i, const float t);
-    static float bed_level_virt_2cmr(const uint8_t x, const uint8_t y, const_float_t tx, const_float_t ty);
-    static void bed_level_virt_interpolate();
+    static float virt_coord(const uint8_t x, const uint8_t y);
+    static float virt_cmr(const float p[4], const uint8_t i, const float t);
+    static float virt_2cmr(const uint8_t x, const uint8_t y, const_float_t tx, const_float_t ty);
+    static void subdivide_mesh();
   #endif
 
 public:

@@ -24,7 +24,7 @@
 // R25 = 100 kOhm, beta25 = 4100 K, 4.7 kOhm pull-up, Hisens thermistor
 constexpr temp_entry_t temptable_13[] PROGMEM = {
 
-// Extended table from SteinhartHart curvefit
+// Extended table from SteinhartHart curvefit for ProUI
   { OV( 11.72), 350 },
   { OV( 12.36), 345 },
   { OV( 13.06), 340 },

@@ -1,8 +1,8 @@
 /**
  * DWIN Enhanced implementation for PRO UI
  * Author: Miguel A. Risco-Castillo (MRISCOC)
- * Version: 3.24.3
- * Date: 2023/03/07
+ * Version: 3.25.3
+ * Date: 2023/05/18
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -25,10 +25,15 @@
 #include "dwin_defines.h"
 #include "dwinui.h"
 #include "../common/encoder.h"
+#include "../common/limits.h"
 #include "../../../libs/BL24CXX.h"
 
 #if HAS_CGCODE
   #include "custom_gcodes.h"
+#endif
+
+#if ENABLED(CV_LASER_MODULE)
+  #include "cv_laser_module.h"
 #endif
 
 namespace GET_LANG(LCD_LANGUAGE) {
@@ -65,7 +70,7 @@ enum processID : uint8_t {
   NothingToDo
 };
 
-#if HAS_PID_HEATING || ENABLED(MPCTEMP)
+#if HAS_PID_HEATING || ENABLED(MPC_AUTOTUNE)
   enum tempcontrol_t : uint8_t {
   #if HAS_PID_HEATING
     PIDTEMP_START = 0,
@@ -74,7 +79,7 @@ enum processID : uint8_t {
     PID_TEMP_TOO_HIGH,
     PID_TUNING_TIMEOUT,
   #endif
-  #if ENABLED(MPCTEMP)
+  #if ENABLED(MPC_AUTOTUNE)
     MPCTEMP_START,
     MPC_TEMP_ERROR,
     MPC_INTERRUPTED,
@@ -122,7 +127,7 @@ typedef struct {
 } HMI_data_t;
 
 extern HMI_data_t HMI_data;
-static constexpr size_t eeprom_data_size = sizeof(HMI_data_t) + TERN0(ProUIex, sizeof(PRO_data_t));
+static constexpr size_t eeprom_data_size = sizeof(HMI_data_t) + TERN0(PROUI_EX, sizeof(PRO_data_t));
 
 typedef struct {
   int8_t Color[3];                    // Color components
@@ -140,7 +145,7 @@ typedef struct {
   bool select_flag:1;   // Popup button selected
   bool home_flag:1;     // homing in course
   bool config_flag:1;   // SD G-code file is a Configuration file
-  #if ProUIex && HAS_LEVELING
+  #if PROUI_EX && HAS_LEVELING
     bool cancel_abl:1;  // cancel current abl
   #endif
 } HMI_flag_t;
@@ -151,7 +156,7 @@ extern uint8_t checkkey;
 
 // Popups
 #if HAS_HOTEND || HAS_HEATED_BED
-  void DWIN_Popup_Temperature(const bool toohigh);
+  void DWIN_Popup_Temperature(const int_fast8_t heater_id, const bool toohigh);
 #endif
 #if ENABLED(POWER_LOSS_RECOVERY)
   void Popup_PowerLossRecovery();
@@ -176,12 +181,6 @@ void AutoHome();
   REPEAT_1(PREHEAT_COUNT, _DOPREHEAT)
 #endif
 void DoCoolDown();
-#if ENABLED(PIDTEMP)
-  void HotendPID();
-#endif
-#if ENABLED(PIDTEMPBED)
-  void BedPID();
-#endif
 #if ENABLED(BAUD_RATE_GCODE)
   void SetBaud115K();
   void SetBaud250K();
@@ -191,15 +190,17 @@ void DoCoolDown();
 #endif
 void ApplyExtMinT();
 void ParkHead();
-#if HAS_ONESTEP_LEVELING
-  void Trammingwizard();
+#if ENABLED(LCD_BED_TRAMMING)
+  TERN(HAS_BED_PROBE, float, void) Tram(uint8_t point, bool stow_probe = true);
+  #if ENABLED(HAS_BED_PROBE)
+    void Trammingwizard();
+  #endif
 #endif
 #if BOTH(LED_CONTROL_MENU, HAS_COLOR_LEDS)
   void ApplyLEDColor();
 #endif
 #if ENABLED(AUTO_BED_LEVELING_UBL)
   void UBLMeshTilt();
-  bool UBLValidMesh();
   void UBLMeshSave();
   void UBLMeshLoad();
 #endif
@@ -248,8 +249,6 @@ void DWIN_Print_Aborted();
 #endif
 void DWIN_Print_Header(const char *text);
 void DWIN_SetColorDefaults();
-void DWIN_ApplyColor();
-void DWIN_ApplyColor(const int8_t element, const bool ldef=false);
 void DWIN_CopySettingsTo(char * const buff);
 void DWIN_CopySettingsFrom(const char * const buff);
 void DWIN_SetDataDefaults();
@@ -293,8 +292,6 @@ void Draw_FilSet_Menu();
   void Draw_ParkPos_Menu();
 #endif
 void Draw_PhySet_Menu();
-void Draw_SelectColors_Menu();
-void Draw_GetColor_Menu();
 #if BOTH(CASE_LIGHT_MENU, CASELIGHT_USES_BRIGHTNESS)
   void Draw_CaseLight_Menu();
 #endif
@@ -336,6 +333,14 @@ void Draw_Steps_Menu();
   void Draw_TrinamicConfig_menu();
 #endif
 
+// Custom colors editing
+#if HAS_CUSTOM_COLORS
+  void DWIN_ApplyColor();
+  void DWIN_ApplyColor(const int8_t element, const bool ldef=false);
+  void Draw_SelectColors_Menu();
+  void Draw_GetColor_Menu();
+#endif
+
 // PID
 #if HAS_PID_HEATING
   #include "../../../module/temperature.h"
@@ -343,16 +348,35 @@ void Draw_Steps_Menu();
   void DWIN_PidTuning(tempcontrol_t result);
 #endif
 #if ENABLED(PIDTEMP)
-  void Draw_HotendPID_Menu();
+  #if ENABLED(PID_AUTOTUNE_MENU)
+    void HotendPID();
+  #endif
+  #if EITHER(PID_AUTOTUNE_MENU, PID_EDIT_MENU)
+    void Draw_HotendPID_Menu();
+  #endif
 #endif
 #if ENABLED(PIDTEMPBED)
-  void Draw_BedPID_Menu();
+  #if ENABLED(PID_AUTOTUNE_MENU)
+    void BedPID();
+  #endif
+  #if EITHER(PID_AUTOTUNE_MENU, PID_EDIT_MENU)
+    void Draw_BedPID_Menu();
+  #endif
 #endif
 
 // MPC
-#if ENABLED(MPCTEMP)
-  void DWIN_MPCTuning(tempcontrol_t result);
+#if EITHER(MPC_EDIT_MENU, MPC_AUTOTUNE_MENU)
   void Draw_HotendMPC_Menu();
+#endif
+#if ENABLED(MPC_AUTOTUNE)
+  void DWIN_MPCTuning(tempcontrol_t result);
+#endif
+
+// CV Laser Module
+#if ENABLED(CV_LASER_MODULE)
+  void LaserOn(const bool turn_on);
+  void Draw_LaserSettings_Menu();
+  void Draw_LaserPrint_Menu();
 #endif
 
 // ToolBar

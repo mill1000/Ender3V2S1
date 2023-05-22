@@ -42,7 +42,7 @@ MarlinUI ui;
 
 #if HAS_DISPLAY
   #include "../gcode/queue.h"
-  #include "fontutils.h"
+  #include "utf8.h"
 #endif
 
 #if ENABLED(DWIN_CREALITY_LCD)
@@ -125,7 +125,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
 #endif
 
 #if ENABLED(PCA9632_BUZZER)
-  void MarlinUI::buzz(const long duration, const uint16_t freq) {
+  void MarlinUI::buzz(const long duration, const uint16_t freq/*=0*/) {
     if (sound_on) PCA9632_buzz(duration, freq);
   }
 #endif
@@ -172,7 +172,7 @@ constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
 #endif
 
 #if HAS_U8GLIB_I2C_OLED && PINS_EXIST(I2C_SCL, I2C_SDA) && DISABLED(SOFT_I2C_EEPROM)
-  #include "Wire.h"
+  #include <Wire.h>
 #endif
 
 // Encoder Handling
@@ -337,7 +337,7 @@ void MarlinUI::init() {
 
   uint8_t MarlinUI::lcd_status_update_delay = 1; // First update one loop delayed
 
-  #if BOTH(FILAMENT_LCD_DISPLAY, SDSUPPORT)
+  #if BOTH(FILAMENT_LCD_DISPLAY, HAS_MEDIA)
     millis_t MarlinUI::next_filament_display; // = 0
   #endif
 
@@ -349,10 +349,9 @@ void MarlinUI::init() {
 
   #if IS_DWIN_MARLINUI
     bool MarlinUI::did_first_redraw;
-    bool MarlinUI::old_is_printing;
   #endif
 
-  #if ENABLED(SDSUPPORT)
+  #if HAS_MEDIA
 
     #if MARLINUI_SCROLL_NAME
       uint8_t MarlinUI::filename_scroll_pos, MarlinUI::filename_scroll_max;
@@ -423,7 +422,7 @@ void MarlinUI::init() {
 
     #if !HAS_GRAPHICAL_TFT
 
-      void _wrap_string(uint8_t &col, uint8_t &row, const char * const string, read_byte_cb_t cb_read_byte, bool wordwrap/*=false*/) {
+      void _wrap_string(uint8_t &col, uint8_t &row, const char * const string, read_byte_cb_t cb_read_byte, const bool wordwrap/*=false*/) {
         SETCURSOR(col, row);
         if (!string) return;
 
@@ -505,7 +504,7 @@ void MarlinUI::init() {
         ui.manual_move.menu_scale = REPRAPWORLD_KEYPAD_MOVE_STEP;
         ui.encoderPosition = dir;
         switch (axis) {
-          case X_AXIS:
+          TERN_(HAS_X_AXIS, case X_AXIS:)
           TERN_(HAS_Y_AXIS, case Y_AXIS:)
           TERN_(HAS_Z_AXIS, case Z_AXIS:)
             lcd_move_axis(axis);
@@ -669,8 +668,8 @@ void MarlinUI::init() {
 
     #if HAS_MARLINUI_MENU
       if (use_click()) {
-        #if BOTH(FILAMENT_LCD_DISPLAY, SDSUPPORT)
-          next_filament_display = millis() + 5000UL;  // Show status message for 5s
+        #if BOTH(FILAMENT_LCD_DISPLAY, HAS_MEDIA)
+          pause_filament_display();
         #endif
         goto_screen(menu_main);
         reinit_lcd(); // Revive a noisy shared SPI LCD
@@ -1423,6 +1422,13 @@ void MarlinUI::init() {
 
   #endif // HAS_ENCODER_ACTION
 
+  #if HAS_SOUND
+    void MarlinUI::completion_feedback(const bool good/*=true*/) {
+      TERN_(HAS_TOUCH_SLEEP, wakeup_screen()); // Wake up on rotary encoder click...
+      if (good) OKAY_BUZZ(); else ERR_BUZZ();
+    }
+  #endif
+
 #endif // HAS_WIRED_LCD
 
 #if HAS_STATUS_MESSAGE
@@ -1482,13 +1488,16 @@ void MarlinUI::init() {
     FSTR_P msg;
     if (printingIsPaused())
       msg = GET_TEXT_F(MSG_PRINT_PAUSED);
-    #if ENABLED(SDSUPPORT) && DISABLED(DWIN_LCD_PROUI)
+    #if HAS_MEDIA && DISABLED(DWIN_LCD_PROUI)
       else if (IS_SD_PRINTING())
         return set_status(card.longest_filename(), true);
     #endif
     else if (print_job_timer.isRunning())
-      msg = GET_TEXT_F(MSG_PRINTING);
-
+      #if ENABLED(CV_LASER_MODULE)
+        msg = laser_device.is_laser_device() ? GET_TEXT_F(MSG_ENGRAVING) : GET_TEXT_F(MSG_PRINTING);
+      #else
+        msg = GET_TEXT_F(MSG_PRINTING);
+      #endif
     #if SERVICE_INTERVAL_1 > 0
       else if (print_job_timer.needsService(1)) msg = FPSTR(service1);
     #endif
@@ -1579,7 +1588,7 @@ void MarlinUI::init() {
 
     #if HAS_WIRED_LCD
 
-      #if BASIC_PROGRESS_BAR || BOTH(FILAMENT_LCD_DISPLAY, SDSUPPORT)
+      #if BASIC_PROGRESS_BAR || BOTH(FILAMENT_LCD_DISPLAY, HAS_MEDIA)
         const millis_t ms = millis();
       #endif
 
@@ -1590,8 +1599,8 @@ void MarlinUI::init() {
         #endif
       #endif
 
-      #if BOTH(FILAMENT_LCD_DISPLAY, SDSUPPORT)
-        next_filament_display = ms + 5000UL; // Show status message for 5s
+      #if BOTH(FILAMENT_LCD_DISPLAY, HAS_MEDIA)
+        pause_filament_display(ms); // Show status message for 5s
       #endif
 
     #endif
@@ -1642,12 +1651,15 @@ void MarlinUI::init() {
 
 #if HAS_DISPLAY
 
-  #if ENABLED(SDSUPPORT)
+  #if HAS_MEDIA
     extern bool wait_for_user, wait_for_heatup;
   #endif
 
   void MarlinUI::abort_print() {
-    #if ENABLED(SDSUPPORT)
+    #if ENABLED(CV_LASER_MODULE)
+      if (laser_device.is_laser_device()) laser_device.quick_stop();
+    #endif
+    #if HAS_MEDIA
       wait_for_heatup = wait_for_user = false;
       card.abortFilePrintSoon();
     #endif
@@ -1688,9 +1700,15 @@ void MarlinUI::init() {
     LCD_MESSAGE(MSG_PRINT_PAUSED);
 
     #if ENABLED(PARK_HEAD_ON_PAUSE)
-      pause_show_message(PAUSE_MESSAGE_PARKING, PAUSE_MODE_PAUSE_PRINT); // Show message immediately to let user know about pause in progress
-      queue.inject(F("M25 P\nM24"));
-    #elif ENABLED(SDSUPPORT)
+      #if ENABLED(CV_LASER_MODULE)
+        if (laser_device.is_laser_device()) queue.inject(F("M25"));
+        else
+      #endif
+      {
+        pause_show_message(PAUSE_MESSAGE_PARKING, PAUSE_MODE_PAUSE_PRINT); // Show message immediately to let user know about pause in progress
+        queue.inject(F("M25 P\nM24"));
+      }
+    #elif HAS_MEDIA
       queue.inject(F("M25"));
     #elif defined(ACTION_ON_PAUSE)
       hostui.pause();
@@ -1700,7 +1718,7 @@ void MarlinUI::init() {
   void MarlinUI::resume_print() {
     reset_status();
     TERN_(PARK_HEAD_ON_PAUSE, wait_for_heatup = wait_for_user = false);
-    TERN_(SDSUPPORT, if (IS_SD_PAUSED()) queue.inject_P(M24_STR));
+    TERN_(HAS_MEDIA, if (IS_SD_PAUSED()) queue.inject_P(M24_STR));
     #ifdef ACTION_ON_RESUME
       hostui.resume();
     #endif
@@ -1745,7 +1763,7 @@ void MarlinUI::init() {
   MarlinUI::progress_t MarlinUI::_get_progress() {
     return (
       TERN0(SET_PROGRESS_PERCENT, (progress_override & PROGRESS_MASK))
-      #if ENABLED(SDSUPPORT)
+      #if HAS_MEDIA
         ?: TERN(HAS_PRINT_PROGRESS_PERMYRIAD, card.permyriadDone(), card.percentDone())
       #endif
     );
@@ -1775,7 +1793,7 @@ void MarlinUI::init() {
 
 #endif // HAS_PRINT_PROGRESS
 
-#if ENABLED(SDSUPPORT)
+#if HAS_MEDIA
 
   #if ENABLED(EXTENSIBLE_UI)
     #include "extui/ui_api.h"
@@ -1828,7 +1846,7 @@ void MarlinUI::init() {
     #endif
   }
 
-#endif // SDSUPPORT
+#endif // HAS_MEDIA
 
 #if HAS_MARLINUI_MENU
   void MarlinUI::reset_settings() {

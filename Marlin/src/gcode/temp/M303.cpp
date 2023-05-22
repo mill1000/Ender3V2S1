@@ -25,6 +25,7 @@
 #if HAS_PID_HEATING
 
 #include "../gcode.h"
+#include "../queue.h" // for flush_tx
 #include "../../lcd/marlinui.h"
 #include "../../module/temperature.h"
 
@@ -61,15 +62,9 @@ void GcodeSuite::M303() {
   const heater_id_t hid = (heater_id_t)parser.intval('E');
   celsius_t default_temp;
   switch (hid) {
-    #if ENABLED(PIDTEMP)
-      case 0 ... HOTENDS - 1: default_temp = PREHEAT_1_TEMP_HOTEND; break;
-    #endif
-    #if ENABLED(PIDTEMPBED)
-      case H_BED: default_temp = PREHEAT_1_TEMP_BED; break;
-    #endif
-    #if ENABLED(PIDTEMPCHAMBER)
-      case H_CHAMBER: default_temp = PREHEAT_1_TEMP_CHAMBER; break;
-    #endif
+    OPTCODE(PIDTEMP,        case 0 ... HOTENDS - 1: default_temp = PREHEAT_1_TEMP_HOTEND;  break)
+    OPTCODE(PIDTEMPBED,     case H_BED:             default_temp = PREHEAT_1_TEMP_BED;     break)
+    OPTCODE(PIDTEMPCHAMBER, case H_CHAMBER:         default_temp = PREHEAT_1_TEMP_CHAMBER; break)
     default:
       SERIAL_ECHOPGM(STR_PID_AUTOTUNE);
       SERIAL_ECHOLNPGM(STR_PID_BAD_HEATER_ID);
@@ -91,6 +86,8 @@ void GcodeSuite::M303() {
   LCD_MESSAGE(MSG_PID_AUTOTUNE);
   thermalManager.PID_autotune(temp, hid, c, u);
   ui.reset_status();
+
+  queue.flush_rx();
 }
 
 #endif // HAS_PID_HEATING

@@ -70,6 +70,7 @@ uint32_t PrintJobRecovery::cmd_sdpos, // = 0
 #include "../core/debug_out.h"
 
 #if ENABLED(DWIN_LCD_PROUI)
+  #include "../lcd/e3v2/proui/dwin.h"
   #include "../lcd/e3v2/proui/dwin_popup.h"
 #endif
 
@@ -117,6 +118,7 @@ void PrintJobRecovery::changed() {
     purge();
   else if (IS_SD_PRINTING())
     save(true);
+  TERN_(EXTENSIBLE_UI, ExtUI::onSetPowerLoss(enabled));
 }
 
 /**
@@ -125,6 +127,15 @@ void PrintJobRecovery::changed() {
  * If a saved state exists send 'M1000 S' to initiate job recovery.
  */
 bool PrintJobRecovery::check() {
+
+  // 激光暂不做断电续打 107011 -20211015
+  #if ENABLED(CV_LASER_MODULE)
+    if(laser_device.is_laser_device()) {// 激光模式下不做断电续打
+      purge();
+      return false;
+    }
+  #endif
+
   //if (!card.isMounted()) card.mount();
   bool success = false;
   if (card.isMounted()) {
@@ -172,6 +183,10 @@ void PrintJobRecovery::prepare() {
 void PrintJobRecovery::save(const bool force/*=false*/, const float zraise/*=POWER_LOSS_ZRAISE*/, const bool raised/*=false*/) {
 
   // We don't check IS_SD_PRINTING here so a save may occur during a pause
+
+  #if ENABLED(CV_LASER_MODULE)
+    if (laser_device.is_laser_device()) return;
+  #endif
 
   #if SAVE_INFO_INTERVAL_MS > 0
     static millis_t next_save_ms; // = 0
