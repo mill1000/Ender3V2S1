@@ -1,8 +1,8 @@
 /**
  * Mesh Viewer for PRO UI
  * Author: Miguel A. Risco-Castillo (MRISCOC)
- * version: 4.2.1
- * Date: 2023/05/05
+ * version: 5.1.1
+ * Date: 2023/07/12
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -20,15 +20,15 @@
  */
 #pragma once
 
-class MeshViewerClass {
+class MeshViewer {
 public:
   static float max, min;
-  static void DrawMeshGrid(const uint8_t csizex, const uint8_t csizey);
-  static void DrawMeshPoint(const uint8_t x, const uint8_t y, const float z);
-  static void Draw(bool withsave = false, bool redraw = true);
-  static void DrawMesh(bed_mesh_t zval, const uint8_t csizex, const uint8_t csizey);
+  static void drawMeshGrid(const uint8_t csizex, const uint8_t csizey);
+  static void drawMeshPoint(const uint8_t x, const uint8_t y, const float z);
+  static void draw(const bool withsave=false, const bool redraw=true);
+  static void drawMesh(const bed_mesh_t zval, const uint8_t csizex, const uint8_t csizey);
 };
 
-extern MeshViewerClass MeshViewer;
+extern MeshViewer meshViewer;
 
-void Goto_MeshViewer(bool redraw);
+void gotoMeshViewer(const bool redraw);
