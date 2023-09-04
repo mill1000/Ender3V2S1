@@ -66,17 +66,17 @@
 #define Y_STOP_PIN                          PA6
 
 #ifdef BLTOUCH
-  #define Z_STOP_PIN         PB0  // BLTouch IN PIN  原理图TOUCH的管脚已经变-----zy
-  #define SERVO0_PIN         PB1  // BLTouch PWM-OUT PIN  原理图TOUCH的管脚已经变-----zy
-  #define Z_STOP_PIN_NADD    PA7   //Added z-axis limit switch  rock_20210816
+  #define Z_STOP_PIN                        PB1  // BLTouch IN PIN  原理图TOUCH的管脚已经变-----zy
+  #define SERVO0_PIN                        PB0  // BLTouch PWM-OUT PIN  原理图TOUCH的管脚已经变-----zy
+  #define Z_STOP_PIN_NADD                   PA7  // Added z-axis limit switch  rock_20210816
 #else
-  #define Z_STOP_PIN         PA7 //Z轴限位开关
+  #define Z_STOP_PIN                        PA7 //Z轴限位开关
 #endif
 
 //#define one (c14 || a15)
 
 #ifndef Z_MIN_PROBE_PIN
-  #define Z_MIN_PROBE_PIN                   PB0   // BLTouch IN
+  #define Z_MIN_PROBE_PIN                   PB1   // BLTouch IN
 #endif
 
 //
@@ -188,13 +188,13 @@
     #define E0_SERIAL_TX_PIN                  X_SERIAL_TX_PIN
     #define E0_SERIAL_RX_PIN                  X_SERIAL_RX_PIN
     
-    #define E1_SERIAL_TX_PIN                X_SERIAL_TX_PIN
-    #define E1_SERIAL_RX_PIN                X_SERIAL_RX_PIN
+    #define E1_SERIAL_TX_PIN                  X_SERIAL_TX_PIN
+    #define E1_SERIAL_RX_PIN                  X_SERIAL_RX_PIN
 
-    #define X_DIAG_PIN                          PC13
-    #define Y_DIAG_PIN                          PC14
-    #define Z_DIAG_PIN                          PC15
-    #define E0_DIAG_PIN                         PA15
+    #define X_DIAG_PIN                        PC13
+    #define Y_DIAG_PIN                        PC14
+    #define Z_DIAG_PIN                        PC15
+    #define E0_DIAG_PIN                       PA15
 
  
 
@@ -211,11 +211,11 @@
 //
 // Heaters / Fans
 //
-#define HEATER_0_PIN                        PA1    // HEATER1
-#define HEATER_BED_PIN                      PB10 //PA15   // HOT BED
+#define HEATER_0_PIN                        PA1   // HEATER1
+#define HEATER_BED_PIN                      PB10  //PA15   // HOT BED
 
 #ifndef FAN0_PIN
-  #define FAN0_PIN                           PA0   // FAN
+  #define FAN0_PIN                          PA0   // FAN
 #endif
 #if PIN_EXISTS(FAN)
   #define FAN_SOFT_PWM

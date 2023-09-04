@@ -200,7 +200,7 @@
 #define COLOR_LIGHT_BLUE      0x3A6A
 #define COLOR_MAGENTA         0xF81F
 #define COLOR_LIGHT_MAGENTA   0x9813
-#define COLOR_LIGHT_RED       0x8800
+#define COLOR_LIGHT_RED       RGB(31,31,15)
 #define COLOR_ORANGE          0xFA20
 #define COLOR_LIGHT_ORANGE    0xFBC0
 #define COLOR_LIGHT_YELLOW    0x8BE0
@@ -520,6 +520,9 @@ namespace DWINUI {
   //  y: Upper coordinate of the string
   //  *string: The string
   void drawCenteredString(bool bShow, fontid_t fid, uint16_t color, uint16_t bColor, uint16_t x1, uint16_t x2, uint16_t y, const char * const string);
+  inline void drawCenteredString(bool bShow, fontid_t fid, uint16_t color, uint16_t bColor, uint16_t x, uint16_t y, const char * const string) {
+    drawCenteredString(bShow, fid, color, bColor, 2 * x, 0, y, string);
+  }
   inline void drawCenteredString(bool bShow, fontid_t fid, uint16_t color, uint16_t bColor, uint16_t y, const char * const string) {
     drawCenteredString(bShow, fid, color, bColor, 0, DWIN_WIDTH, y, string);
   }

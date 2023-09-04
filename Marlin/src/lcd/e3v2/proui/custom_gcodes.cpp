@@ -87,7 +87,7 @@ void C108() {
 }
 
 // Enable or disable preview screen
-#if ENABLED(HAS_GCODE_PREVIEW)
+#if ALL(PROUI_EX, HAS_GCODE_PREVIEW, PREVIEW_MENU_ITEM)
 void C250() {
   if (parser.seenval('P')) {
     hmiData.enablePreview = !!parser.value_byte();
@@ -123,9 +123,6 @@ void customGcode(const int16_t codenum) {
       case 35: C35(); break; // Launch bed tramming wizard
     #endif
     case 108: C108(); break;            // Cancel a Wait for User without an Emergecy Parser
-    #if ENABLED(HAS_GCODE_PREVIEW)
-      case 250: C250(); break;          // Enable or disable preview screen
-    #endif
     #if HAS_LOCKSCREEN
       case 510: C510(); break;          // lock screen
     #endif
@@ -147,7 +144,10 @@ void customGcode(const int16_t codenum) {
       #if ENABLED(NOZZLE_PARK_FEATURE)
         case 125: proUIEx.C125(); break;  // Set park position
       #endif
-      #if HAS_FILAMENT_SENSOR
+      #if ALL(HAS_GCODE_PREVIEW, PREVIEW_MENU_ITEM)
+        case 250: C250(); break;          // Enable or disable preview screen
+      #endif
+      #if HAS_PROUI_RUNOUT_SENSOR
         case 412: proUIEx.C412(); break;  // Set runout sensor active mode
       #endif
       case 562: proUIEx.C562(); break;    // Invert Extruder
@@ -172,7 +172,7 @@ void customGcodeReport(const bool forReplay/*=true*/) {
     #if ENABLED(NOZZLE_PARK_FEATURE)
       proUIEx.C125_report(forReplay);
     #endif
-    #if HAS_FILAMENT_SENSOR
+    #if HAS_PROUI_RUNOUT_SENSOR
       proUIEx.C412_report(forReplay);
     #endif
       proUIEx.C562_report(forReplay);
