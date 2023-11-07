@@ -29,8 +29,8 @@ Thank you for your support, I receive donations through [Patreon](https://www.pa
 ## Community links
 * [Telegram](https://t.me/ender3v2s1firmware)
 * [Reddit](https://www.reddit.com/r/Ender3v2Firmware) 
-* [Ender 3V2 Facebook](https://www.facebook.com/groups/ender3v2firmware)
-* [Ender 3S1 Facebook](https://www.facebook.com/groups/ender3s1printer)
+* [Facebook](https://www.facebook.com/groups/professionalfirmware)
+* [Youtube](https://www.youtube.com/@3dprinterfirmware)
 
 ![](https://raw.githubusercontent.com/mriscoc/Ender3V2S1/Ender3V2S1-Released/screenshots/main.jpg)
 
