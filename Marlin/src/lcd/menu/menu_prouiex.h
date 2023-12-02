@@ -1,8 +1,8 @@
 /**
- * Custom G-code implementation for PRO UI
- * Author: Miguel A. Risco-Castillo (MRISCOC)
- * Version: 2.1.0
- * Date: 2023/07/12
+ * Professional Firmware UI extensions menus
+ * Author: Miguel A. Risco-Castillo
+ * Version: 1.1.0
+ * Date: 2023/11/2
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -17,9 +17,10 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
+ * For commercial applications additional licenses can be requested
  */
+#pragma once
 
- #pragma once
-
-void customGcode(const int16_t codenum);
-void customGcodeReport(const bool forReplay=true);
+void menu_park_position();
+void menu_mesh_settings();
+void menu_advanced_prouiexset();

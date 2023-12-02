@@ -23,7 +23,7 @@
  */
 #pragma once
 
-#include "../../../inc/MarlinConfigPre.h"
+#include "../../inc/MarlinConfigPre.h"
 
 #define UBL_Z_OFFSET_MIN -3.0
 #define UBL_Z_OFFSET_MAX  3.0

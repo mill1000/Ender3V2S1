@@ -22,23 +22,26 @@
  *
  */
 
-#include "../../../inc/MarlinConfigPre.h"
+#include "../../inc/MarlinConfigPre.h"
 
-#if ALL(DWIN_LCD_PROUI, HAS_LEVELING)
+#if HAS_LEVELING
 
-#include "../../marlinui.h"
-#include "../../../core/types.h"
-#include "../../../feature/bedlevel/bedlevel.h"
-#include "../../../module/probe.h"
-#include "../../../gcode/gcode.h"
-#include "../../../module/planner.h"
-#include "../../../gcode/queue.h"
-#include "../../../libs/least_squares_fit.h"
-#include "../../../libs/vector_3.h"
+#include "../../lcd/marlinui.h"
+#include "../../core/types.h"
+#include "../../feature/bedlevel/bedlevel.h"
+#include "../../module/probe.h"
+#include "../../gcode/gcode.h"
+#include "../../module/planner.h"
+#include "../../gcode/queue.h"
+#include "../../libs/least_squares_fit.h"
+#include "../../libs/vector_3.h"
 
-#include "dwin.h"
-#include "dwinui.h"
-#include "dwin_popup.h"
+#if ENABLED(DWIN_LCD_PROUI)
+  #include "../../lcd/e3v2/proui/dwin.h"
+  #include "../../lcd/e3v2/proui/dwinui.h"
+  #include "../../lcd/e3v2/proui/dwin_popup.h"
+#endif
+
 #include "bedlevel_tools.h"
 
 BedLevelTools bedLevelTools;
@@ -118,15 +121,17 @@ void BedLevelTools::manualMove(const uint8_t mesh_x, const uint8_t mesh_y, bool 
     planner.synchronize();
   }
   else {
-    dwinShowPopup(ICON_BLTouch, F("Moving to Point"), F("Please wait until done."));
-    hmiSaveProcessID(ID_NothingToDo);
+    #if ENABLED(DWIN_LCD_PROUI)
+      dwinShowPopup(ICON_BLTouch, F("Moving to Point"), F("Please wait until done."));
+      hmiSaveProcessID(ID_NothingToDo);
+    #endif
     gcode.process_subcommands_now(TS(F("G0 F300 Z"), p_float_t(Z_CLEARANCE_BETWEEN_PROBES, 3)));
     gcode.process_subcommands_now(TS(F("G42 F4000 I"), mesh_x, F(" J"), mesh_y));
     planner.synchronize();
     current_position.z = goto_mesh_value ? bedlevel.z_values[mesh_x][mesh_y] : Z_CLEARANCE_BETWEEN_PROBES;
     planner.buffer_line(current_position, homing_feedrate(Z_AXIS), active_extruder);
     planner.synchronize();
-    hmiReturnScreen();
+    TERN_(DWIN_LCD_PROUI, hmiReturnScreen());
   }
 }
 
@@ -163,7 +168,7 @@ void BedLevelTools::meshReset() {
   #endif
 }
 
-// Return 'true' if mesh is good and within LCD limits
+// Return 'true' if mesh is good and within limits
 bool BedLevelTools::meshValidate() {
   GRID_LOOP(x, y) {
     const float v = bedlevel.z_values[x][y];
@@ -172,4 +177,4 @@ bool BedLevelTools::meshValidate() {
   return true;
 }
 
-#endif // DWIN_LCD_PROUI && HAS_LEVELING
+#endif // HAS_LEVELING

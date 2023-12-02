@@ -786,11 +786,16 @@ void unified_bed_leveling::shift_mesh_height() {
         }
       #endif
 
-      TERN_(PROUI_EX, if (proUIEx.quitLeveling()) return dwinLevelingDone(););
+      #if PROUI_EX
+        if (proUIEx.quitLeveling()) return TERN(DWIN_LCD_PROIU, dwinLevelingDone(), proUIEx.levelingDone());
+      #endif
 
+      // do_furthest is normally false
       best = do_furthest // points with valid data and with HUGE_VALF will be skipped
         ? find_furthest_invalid_mesh_point()
         : find_closest_mesh_point_of_type(INVALID, nearby, true);
+
+      DEBUG_ECHOLNPGM("ubl best.pos.x:", best.pos.x);
 
       if (best.pos.x >= 0) {    // mesh point found and is reachable by probe
         TERN_(EXTENSIBLE_UI, ExtUI::onMeshUpdate(best.pos, ExtUI::G29_POINT_START));

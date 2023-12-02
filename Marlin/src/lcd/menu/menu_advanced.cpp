@@ -57,6 +57,10 @@
   #include "../../feature/password/password.h"
 #endif
 
+#if PROUI_EX
+  #include "menu_prouiex.h"
+#endif
+
 void menu_tmc();
 void menu_backlash();
 
@@ -628,10 +632,10 @@ void menu_backlash();
       START_MENU();
       BACK_ITEM(MSG_ADVANCED_SETTINGS);
       #if HAS_PROBE_XY_OFFSET
-        EDIT_ITEM(float31sign, MSG_ZPROBE_XOFFSET, &probe.offset.x, -(X_BED_SIZE), X_BED_SIZE);
-        EDIT_ITEM(float31sign, MSG_ZPROBE_YOFFSET, &probe.offset.y, -(Y_BED_SIZE), Y_BED_SIZE);
+        EDIT_ITEM(float31sign, MSG_ZPROBE_XOFFSET, &probe.offset.x, PROBE_OFFSET_XMIN, PROBE_OFFSET_XMAX);
+        EDIT_ITEM(float31sign, MSG_ZPROBE_YOFFSET, &probe.offset.y, PROBE_OFFSET_YMIN, PROBE_OFFSET_YMAX);
       #endif
-      EDIT_ITEM(LCD_Z_OFFSET_TYPE, MSG_ZPROBE_ZOFFSET, &probe.offset.z, Z_PROBE_OFFSET_RANGE_MIN, Z_PROBE_OFFSET_RANGE_MAX);
+      EDIT_ITEM(LCD_Z_OFFSET_TYPE, MSG_ZPROBE_ZOFFSET, &probe.offset.z, PROBE_OFFSET_ZMIN, PROBE_OFFSET_ZMAX);
 
       #if ENABLED(PROBE_OFFSET_WIZARD)
         SUBMENU(MSG_PROBE_WIZARD, goto_probe_offset_wizard);
@@ -682,6 +686,10 @@ void menu_advanced_settings() {
   BACK_ITEM(MSG_CONFIGURATION);
 
   #if DISABLED(SLIM_LCD_MENUS)
+
+    #if PROUI_EX
+      SUBMENU(MSG_PROUIEX_SET, menu_advanced_prouiexset);
+    #endif
 
     #if ENABLED(POLARGRAPH)
       // M665 - Polargraph Settings

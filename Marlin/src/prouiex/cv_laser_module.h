@@ -31,7 +31,11 @@
  * Date: 2023/05/04
  */
 
-#include "../../../inc/MarlinConfig.h"
+#include "../inc/MarlinConfig.h"
+
+#if ENABLED(CV_LASER_MODULE) && DISABLED(PROUI_EX)
+  #error "CV_LASER_MODULE requires PROUI_EX."
+#endif
 
 #if HAS_MEDIA
   #include "file_header.h"

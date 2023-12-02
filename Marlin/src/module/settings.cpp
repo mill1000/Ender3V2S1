@@ -78,12 +78,13 @@
 #if ENABLED(EXTENSIBLE_UI)
   #include "../lcd/extui/ui_api.h"
 #elif ENABLED(DWIN_LCD_PROUI)
+  #include "../feature/bedlevel/bedlevel_tools.h"
   #include "../lcd/e3v2/proui/dwin.h"
-  #include "../lcd/e3v2/proui/bedlevel_tools.h"
-#endif
-
-#if ALL(PROUI_EX, HAS_MESH)
-  #include "../lcd/e3v2/proui/meshviewer.h"
+  #if ALL(PROUI_EX, HAS_MESH)
+    #include "../lcd/e3v2/proui/meshviewer.h"
+  #endif
+#elif HAS_CGCODE
+  #include "../prouiex/custom_gcodes.h"
 #endif
 
 #if ENABLED(HOST_PROMPT_SUPPORT)
@@ -224,6 +225,19 @@ typedef struct SettingsDataStruct {
   uint16_t  data_size;                                  // Data Size for validation
 
   //
+  // ProUI extensions, physical settings, mesh settings
+  //
+  #if PROUI_EX
+    #if HAS_MESH && DISABLED(AUTO_BED_LEVELING_UBL)
+      MeshSet_t meshSet;
+    #endif
+    uint8_t proui_data[proUIEx.eeprom_data_size];
+    #if ALL(DWIN_LCD_PROUI, HAS_MESH)
+      bool meshmode;
+    #endif
+  #endif
+
+  //
   // DISTINCT_E_FACTORS
   //
   uint8_t e_factors;                                    // DISTINCT_AXES - NUM_AXES
@@ -305,13 +319,6 @@ typedef struct SettingsDataStruct {
     bed_mesh_t z_values;                                // G29
   #else
     float z_values[3][3];
-  #endif
-
-  //
-  // Mesh Viewer mode
-  //
-  #if ALL(PROUI_EX, HAS_MESH)
-    bool meshmode;
   #endif
 
   //
@@ -626,7 +633,7 @@ typedef struct SettingsDataStruct {
   // Fixed-Time Motion
   //
   #if ENABLED(FT_MOTION)
-    ft_config_t fxdTiCtrl_cfg;                          // M493
+    ft_config_t ftMotion_cfg;                          // M493
   #endif
 
   //
@@ -646,6 +653,13 @@ typedef struct SettingsDataStruct {
   //
   #if ENABLED(HOTEND_IDLE_TIMEOUT)
     hotend_idle_settings_t hotend_idle_config;          // M86 S T E B
+  #endif
+
+  //
+  // Nonlinear Extrusion
+  //
+  #if ENABLED(NONLINEAR_EXTRUSION)
+    ne_coeff_t stepper_ne;                              // M592 A B C
   #endif
 
 } SettingsData;
@@ -772,13 +786,14 @@ void MarlinSettings::postprocess() {
 
 #if ENABLED(EEPROM_SETTINGS)
 
-  #define EEPROM_ASSERT(TST,ERR)  do{ if (!(TST)) { SERIAL_ERROR_MSG(ERR); eeprom_error = ERR_EEPROM_SIZE; } }while(0)
+  #define EEPROM_ASSERT(TST,ERR)  do{ if (!(TST)) { SERIAL_WARN_MSG(ERR); eeprom_error = ERR_EEPROM_SIZE; } }while(0)
 
   #define TWO_BYTE_HASH(A,B) uint16_t((uint16_t(A ^ 0xC3) << 4) ^ (uint16_t(B ^ 0xC3) << 12))
 
   #if ENABLED(DEBUG_EEPROM_READWRITE)
     #define _FIELD_TEST(FIELD) \
       SERIAL_ECHOLNPGM("Field: " STRINGIFY(FIELD)); \
+      if (!(eeprom_index == offsetof(SettingsData, FIELD) + EEPROM_OFFSET)) SERIAL_ECHOLNPGM("eeprom_index:", eeprom_index, " offset:", offsetof(SettingsData, FIELD) + EEPROM_OFFSET); \
       EEPROM_ASSERT( \
         eeprom_error || eeprom_index == offsetof(SettingsData, FIELD) + EEPROM_OFFSET, \
         "Field " STRINGIFY(FIELD) " mismatch." \
@@ -810,7 +825,7 @@ void MarlinSettings::postprocess() {
 
   EEPROM_Error MarlinSettings::size_error(const uint16_t size) {
     if (size != datasize()) {
-      DEBUG_ERROR_MSG("EEPROM datasize error."
+      DEBUG_WARN_MSG("EEPROM datasize error."
         #if ENABLED(MARLIN_DEV_MODE)
           " (Actual:", size, " Expected:", datasize(), ")"
         #endif
@@ -824,6 +839,8 @@ void MarlinSettings::postprocess() {
    * M500 - Store Configuration
    */
   bool MarlinSettings::save() {
+    // DEBUG_ECHO_MSG("Saving Settings");
+
     float dummyf = 0;
     MString<3> ver(F("ERR"));
 
@@ -848,6 +865,22 @@ void MarlinSettings::postprocess() {
     // Write the size of the data structure for use in validation
     const uint16_t data_size = datasize();
     EEPROM_WRITE(data_size);
+
+    //
+    // ProUI extensions, Physical settings, Mesh settings and Mesh Viewer mode
+    //
+    #if PROUI_EX
+      #if HAS_MESH && DISABLED(AUTO_BED_LEVELING_UBL)
+        EEPROM_WRITE(meshSet);
+      #endif
+      _FIELD_TEST(proui_data);
+      char proui_data[proUIEx.eeprom_data_size] = { 0 };
+      proUIEx.copySettingsTo(proui_data);
+      EEPROM_WRITE(proui_data);
+      #if ALL(DWIN_LCD_PROUI, HAS_MESH)
+        EEPROM_WRITE(meshViewer.meshmode);
+      #endif
+    #endif
 
     const uint8_t e_factors = DISTINCT_AXES - (NUM_AXES);
     _FIELD_TEST(e_factors);
@@ -1058,13 +1091,6 @@ void MarlinSettings::postprocess() {
         for (uint16_t q = grid_max_x * grid_max_y; q--;) EEPROM_WRITE(dummyf);
       #endif
     }
-
-    //
-    // Mesh Viewer mode
-    //
-    #if ALL(PROUI_EX, HAS_MESH)
-      EEPROM_WRITE(meshViewer.meshmode);
-    #endif
 
     //
     // X Axis Twist Compensation
@@ -1647,7 +1673,7 @@ void MarlinSettings::postprocess() {
     #endif
 
     //
-    // Creality DWIN User Data
+    // DWIN UI User Data
     //
     #if ENABLED(DWIN_LCD_PROUI)
     {
@@ -1656,9 +1682,7 @@ void MarlinSettings::postprocess() {
       dwinCopySettingsTo(dwin_data);
       EEPROM_WRITE(dwin_data);
     }
-    #endif
-
-    #if ENABLED(DWIN_CREALITY_LCD_JYERSUI)
+    #elif ENABLED(DWIN_CREALITY_LCD_JYERSUI)
     {
       _FIELD_TEST(dwin_settings);
       char dwin_settings[jyersDWIN.eeprom_data_size] = { 0 };
@@ -1750,8 +1774,8 @@ void MarlinSettings::postprocess() {
     // Fixed-Time Motion
     //
     #if ENABLED(FT_MOTION)
-      _FIELD_TEST(fxdTiCtrl_cfg);
-      EEPROM_WRITE(fxdTiCtrl.cfg);
+      _FIELD_TEST(ftMotion_cfg);
+      EEPROM_WRITE(ftMotion.cfg);
     #endif
 
     //
@@ -1773,6 +1797,13 @@ void MarlinSettings::postprocess() {
     //
     #if ENABLED(HOTEND_IDLE_TIMEOUT)
       EEPROM_WRITE(hotend_idle.cfg);
+    #endif
+
+    //
+    // Nonlinear Extrusion
+    //
+    #if ENABLED(NONLINEAR_EXTRUSION)
+      EEPROM_WRITE(stepper.ne);
     #endif
 
     //
@@ -1821,6 +1852,8 @@ void MarlinSettings::postprocess() {
    * M501 - Retrieve Configuration
    */
   EEPROM_Error MarlinSettings::_load() {
+    // DEBUG_ECHO_MSG("Loading Settings");
+
     EEPROM_Error eeprom_error = ERR_EEPROM_NOERR;
 
     if (!EEPROM_START(EEPROM_OFFSET)) return eeprom_error;
@@ -1876,6 +1909,22 @@ void MarlinSettings::postprocess() {
       uint16_t stored_size;
       EEPROM_READ_ALWAYS(stored_size);
       if ((eeprom_error = size_error(stored_size))) break;
+
+      //
+      // ProUI extensions, Physical settings, Mesh settings and Mesh Viewer mode
+      //
+      #if PROUI_EX
+        #if HAS_MESH && DISABLED(AUTO_BED_LEVELING_UBL)
+          EEPROM_READ(meshSet);
+        #endif
+        const char proui_data[proUIEx.eeprom_data_size] = { 0 };
+        _FIELD_TEST(proui_data);
+        EEPROM_READ(proui_data);
+        if (!validating) proUIEx.copySettingsFrom(proui_data);
+        #if ALL(DWIN_LCD_PROUI, HAS_MESH)
+          EEPROM_READ(meshViewer.meshmode);
+        #endif
+      #endif
 
       //
       // Extruder Parameter Count
@@ -2095,13 +2144,6 @@ void MarlinSettings::postprocess() {
             for (uint16_t q = grid_max_x * grid_max_y; q--;) EEPROM_READ(dummyf);
           }
       }
-
-      //
-      // Mesh Viewer mode
-      //
-      #if ALL(PROUI_EX, HAS_MESH)
-        EEPROM_READ(meshViewer.meshmode);
-      #endif
 
       //
       // X Axis Twist Compensation
@@ -2726,7 +2768,7 @@ void MarlinSettings::postprocess() {
       #endif
 
       //
-      // DWIN ProUI User Data
+      // DWIN UI User Data
       //
       #if ENABLED(DWIN_LCD_PROUI)
       {
@@ -2832,8 +2874,8 @@ void MarlinSettings::postprocess() {
       // Fixed-Time Motion
       //
       #if ENABLED(FT_MOTION)
-        _FIELD_TEST(fxdTiCtrl_cfg);
-        EEPROM_READ(fxdTiCtrl.cfg);
+        _FIELD_TEST(ftMotion_cfg);
+        EEPROM_READ(ftMotion.cfg);
       #endif
 
       //
@@ -2862,6 +2904,13 @@ void MarlinSettings::postprocess() {
       //
       #if ENABLED(HOTEND_IDLE_TIMEOUT)
         EEPROM_READ(hotend_idle.cfg);
+      #endif
+
+      //
+      // Nonlinear Extrusion
+      //
+      #if ENABLED(NONLINEAR_EXTRUSION)
+        EEPROM_READ(stepper.ne);
       #endif
 
       //
@@ -2926,10 +2975,10 @@ void MarlinSettings::postprocess() {
         DEBUG_ECHO_MSG("Index: ", eeprom_index - (EEPROM_OFFSET), " Size: ", datasize());
         break;
       case ERR_EEPROM_CORRUPT:
-        DEBUG_ERROR_MSG(STR_ERR_EEPROM_CORRUPT);
+        DEBUG_WARN_MSG(STR_ERR_EEPROM_CORRUPT);
         break;
       case ERR_EEPROM_CRC:
-        DEBUG_ERROR_MSG("EEPROM CRC mismatch - (stored) ", stored_crc, " != ", working_crc, " (calculated)!");
+        DEBUG_WARN_MSG("EEPROM CRC mismatch - (stored) ", stored_crc, " != ", working_crc, " (calculated)!");
         TERN_(HOST_EEPROM_CHITCHAT, hostui.notify(GET_TEXT_F(MSG_ERR_EEPROM_CRC)));
         break;
       default: break;
@@ -2976,7 +3025,7 @@ void MarlinSettings::postprocess() {
     #if ANY(EEPROM_AUTO_INIT, EEPROM_INIT_NOW)
       (void)save();
       SERIAL_ECHO_MSG("EEPROM Initialized");
-      #if PROUI_EX
+      #if ALL(DWIN_LCD_PROUI, PROUI_EX)
         safe_delay(200);
         rebootPrinter();
       #endif
@@ -2984,7 +3033,7 @@ void MarlinSettings::postprocess() {
     return false;
   }
 
-  #if ENABLED(AUTO_BED_LEVELING_UBL)
+  #if ENABLED(AUTO_BED_LEVELING_UBL) && !PROUI_EX
 
     inline void ubl_invalid_slot(const int s) {
       DEBUG_ECHOLNPGM("?Invalid slot.\n", s, " mesh slots available.");
@@ -3027,11 +3076,7 @@ void MarlinSettings::postprocess() {
         uint16_t crc = 0;
 
         #if ENABLED(OPTIMIZED_MESH_STORAGE)
-          #if PROUI_EX
-            int16_t z_mesh_store[GRID_LIMIT][GRID_LIMIT];
-          #else
-            int16_t z_mesh_store[GRID_MAX_POINTS_X][GRID_MAX_POINTS_Y];
-          #endif
+          int16_t z_mesh_store[GRID_MAX_POINTS_X][GRID_MAX_POINTS_Y];
           bedlevel.set_store_from_mesh(bedlevel.z_values, z_mesh_store);
           uint8_t * const src = (uint8_t*)&z_mesh_store;
         #else
@@ -3067,11 +3112,7 @@ void MarlinSettings::postprocess() {
         int pos = mesh_slot_offset(slot);
         uint16_t crc = 0;
         #if ENABLED(OPTIMIZED_MESH_STORAGE)
-          #if PROUI_EX
-            int16_t z_mesh_store[GRID_LIMIT][GRID_LIMIT];
-          #else
-            int16_t z_mesh_store[GRID_MAX_POINTS_X][GRID_MAX_POINTS_Y];
-          #endif
+          int16_t z_mesh_store[GRID_MAX_POINTS_X][GRID_MAX_POINTS_Y];
           uint8_t * const dest = (uint8_t*)&z_mesh_store;
         #else
           uint8_t * const dest = into ? (uint8_t*)into : (uint8_t*)&bedlevel.z_values;
@@ -3083,11 +3124,7 @@ void MarlinSettings::postprocess() {
 
         #if ENABLED(OPTIMIZED_MESH_STORAGE)
           if (into) {
-            #if PROUI_EX
-              float z_values[GRID_LIMIT][GRID_LIMIT];
-            #else
-              float z_values[GRID_MAX_POINTS_X][GRID_MAX_POINTS_Y];
-            #endif
+            float z_values[GRID_MAX_POINTS_X][GRID_MAX_POINTS_Y];
             bedlevel.set_mesh_from_store(z_mesh_store, z_values);
             memcpy(into, z_values, sizeof(z_values));
           }
@@ -3123,12 +3160,12 @@ void MarlinSettings::postprocess() {
     //void MarlinSettings::delete_mesh() { return; }
     //void MarlinSettings::defrag_meshes() { return; }
 
-  #endif // AUTO_BED_LEVELING_UBL
+  #endif // AUTO_BED_LEVELING_UBL && !PROUI_EX
 
 #else // !EEPROM_SETTINGS
 
   bool MarlinSettings::save() {
-    DEBUG_ERROR_MSG("EEPROM disabled");
+    DEBUG_WARN_MSG("EEPROM disabled");
     return false;
   }
 
@@ -3476,7 +3513,6 @@ void MarlinSettings::reset() {
   //
   // Heated Bed PID
   //
-
   #if ENABLED(PIDTEMPBED)
     thermalManager.temp_bed.pid.set(DEFAULT_bedKp, DEFAULT_bedKi, DEFAULT_bedKd);
   #endif
@@ -3484,7 +3520,6 @@ void MarlinSettings::reset() {
   //
   // Heated Chamber PID
   //
-
   #if ENABLED(PIDTEMPCHAMBER)
     thermalManager.temp_chamber.pid.set(DEFAULT_chamberKp, DEFAULT_chamberKi, DEFAULT_chamberKd);
   #endif
@@ -3536,7 +3571,6 @@ void MarlinSettings::reset() {
   //
   // Volumetric & Filament Size
   //
-
   #if DISABLED(NO_VOLUMETRICS)
     parser.volumetric_enabled = ENABLED(VOLUMETRIC_DEFAULT_ON);
     for (uint8_t q = 0; q < COUNT(planner.filament_size); ++q)
@@ -3639,6 +3673,52 @@ void MarlinSettings::reset() {
   TERN_(DWIN_LCD_PROUI, dwinSetDataDefaults());
 
   //
+  // ProUI extension
+  //
+  #if PROUI_EX
+    PRO_data.x_bed_size = DEF_X_BED_SIZE;
+    PRO_data.y_bed_size = DEF_Y_BED_SIZE;
+    PRO_data.x_min_pos  = DEF_X_MIN_POS;
+    PRO_data.y_min_pos  = DEF_Y_MIN_POS;
+    PRO_data.x_max_pos  = DEF_X_MAX_POS;
+    PRO_data.y_max_pos  = DEF_Y_MAX_POS;
+    PRO_data.z_max_pos  = DEF_Z_MAX_POS;
+    #if HAS_MESH
+      meshSet.grid_max_points_x = DEF_GRID_MAX_POINTS_X;
+      meshSet.grid_max_points_y = DEF_GRID_MAX_POINTS_Y;
+      meshSet.mesh_min_x = DEF_MESH_MIN_X;
+      meshSet.mesh_max_x = DEF_MESH_MAX_X;
+      meshSet.mesh_min_y = DEF_MESH_MIN_Y;
+      meshSet.mesh_max_y = DEF_MESH_MAX_Y;
+      #if ENABLED(DWIN_LCD_PROUI)
+        meshViewer.meshmode = ENABLED(USE_GRID_MESHVIEWER);
+        meshViewer.meshfont = TERN(TJC_DISPLAY, font8x16, font6x12);
+      #endif
+    #endif
+    #if HAS_BED_PROBE
+      PRO_data.probezfix = DEF_PROBEZFIX;
+      PRO_data.zprobefeedslow = DEF_Z_PROBE_FEEDRATE_SLOW;
+      PRO_data.multiple_probing = MULTIPLE_PROBING;
+    #endif
+    TERN_(HAS_EXTRUDERS, PRO_data.Invert_E0 = DEF_INVERT_E0_DIR);
+    #if ENABLED(NOZZLE_PARK_FEATURE)
+      PRO_data.Park_point = DEF_NOZZLE_PARK_POINT;
+    #endif
+    #if HAS_PROUI_RUNOUT_SENSOR
+      PRO_data.Runout_active_state = FIL_RUNOUT_STATE;
+      PRO_data.FilamentMotionSensor = DEF_FIL_MOTION_SENSOR;
+    #endif
+    #if HAS_PROUI_MAXTEMP
+      PRO_data.hotend_maxtemp = HEATER_0_MAXTEMP;
+    #endif
+    #if HAS_TOOLBAR
+      const uint8_t _def[] = DEF_TBOPT;
+      for (uint8_t i = 0; i < TBMaxOpt; ++i) PRO_data.TBopt[i] = _def[i];
+    #endif
+    proUIEx.setData();
+  #endif
+
+  //
   // Model predictive control
   //
   #if ENABLED(MPCTEMP)
@@ -3676,7 +3756,12 @@ void MarlinSettings::reset() {
   //
   // Fixed-Time Motion
   //
-  TERN_(FT_MOTION, fxdTiCtrl.set_defaults());
+  TERN_(FT_MOTION, ftMotion.set_defaults());
+
+  //
+  // Nonlinear Extrusion
+  //
+  TERN_(NONLINEAR_EXTRUSION, stepper.ne.reset());
 
   //
   // Input Shaping
@@ -3795,13 +3880,8 @@ void MarlinSettings::reset() {
       #if ENABLED(MESH_BED_LEVELING)
 
         if (leveling_is_valid()) {
-          #if PROUI_EX
-          for (uint8_t py = 0; py < GRID_LIMIT; ++py) {
-            for (uint8_t px = 0; px < GRID_LIMIT; ++px) {
-          #else
           for (uint8_t py = 0; py < GRID_MAX_POINTS_Y; ++py) {
             for (uint8_t px = 0; px < GRID_MAX_POINTS_X; ++px) {
-          #endif
               CONFIG_ECHO_START();
               SERIAL_ECHOLN(F("  G29 S3 I"), px, F(" J"), py, FPSTR(SP_Z_STR), p_float_t(LINEAR_UNIT(bedlevel.z_values[px][py]), 5));
             }
@@ -3825,13 +3905,8 @@ void MarlinSettings::reset() {
       #elif ENABLED(AUTO_BED_LEVELING_BILINEAR)
 
         if (leveling_is_valid()) {
-          #if PROUI_EX
-          for (uint8_t py = 0; py < GRID_LIMIT; ++py) {
-            for (uint8_t px = 0; px < GRID_LIMIT; ++px) {
-          #else
           for (uint8_t py = 0; py < GRID_MAX_POINTS_Y; ++py) {
             for (uint8_t px = 0; px < GRID_MAX_POINTS_X; ++px) {
-          #endif
               CONFIG_ECHO_START();
               SERIAL_ECHOLN(F("  G29 W I"), px, F(" J"), py, FPSTR(SP_Z_STR), p_float_t(LINEAR_UNIT(bedlevel.z_values[px][py]), 5));
             }
@@ -3956,6 +4031,11 @@ void MarlinSettings::reset() {
     // Fixed-Time Motion
     //
     TERN_(FT_MOTION, gcode.M493_report(forReplay));
+
+    //
+    // Nonlinear Extrusion
+    //
+    TERN_(NONLINEAR_EXTRUSION, gcode.M592_report(forReplay));
 
     //
     // Input Shaping

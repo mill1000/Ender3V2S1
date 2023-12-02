@@ -1,5 +1,5 @@
 /**
- * DWIN G-code File header utility
+ * Pro UI G-code File header utility
  * Author: Miguel A. Risco-Castillo
  * version: 2.2.3
  * Date: 2023/05/04

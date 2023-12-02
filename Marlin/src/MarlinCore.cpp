@@ -814,6 +814,9 @@ void idle(const bool no_stepper_sleep/*=false*/) {
   // Update the Beeper queue
   TERN_(HAS_BEEPER, buzzer.tick());
 
+  // Handle ProUI extension update process
+  TERN_(PROUI_EX, proUIEx.update());
+
   // Handle UI input / draw events
   TERN(DWIN_CREALITY_LCD, dwinUpdate(), ui.update());
 
@@ -860,7 +863,7 @@ void idle(const bool no_stepper_sleep/*=false*/) {
   TERN_(HAS_TFT_LVGL_UI, LV_TASK_HANDLER());
 
   // Manage Fixed-time Motion Control
-  TERN_(FT_MOTION, fxdTiCtrl.loop());
+  TERN_(FT_MOTION, ftMotion.loop());
 
   IDLE_DONE:
   TERN_(MARLIN_DEV_MODE, idle_depth--);
@@ -1582,10 +1585,6 @@ void setup() {
     SERIAL_ECHO_TERNARY(err, "BL24CXX Check ", "failed", "succeeded", "!\n");
   #endif
 
-  #if HAS_DWIN_E3V2_BASIC
-    SETUP_RUN(dwinInitScreen());
-  #endif
-
   #if HAS_SERVICE_INTERVALS && !HAS_DWIN_E3V2_BASIC
     SETUP_RUN(ui.reset_status(true));  // Show service messages or keep current status
   #endif
@@ -1617,8 +1616,16 @@ void setup() {
     SETUP_RUN(password.lock_machine());      // Will not proceed until correct password provided
   #endif
 
-  #if ALL(HAS_MARLINUI_MENU, TOUCH_SCREEN_CALIBRATION) && ANY(TFT_CLASSIC_UI, TFT_COLOR_UI)
+  #if ALL(HAS_MARLINUI_MENU, TOUCH_SCREEN_CALIBRATION) && ANY(TFT_CLASSIC_UI, TFT_COLOR_UI) && !PROUI_EX
     SETUP_RUN(ui.check_touch_calibration());
+  #endif
+
+  #if PROUI_EX
+    SETUP_RUN(proUIEx.init());
+  #endif
+
+  #if HAS_DWIN_E3V2_BASIC
+    SETUP_RUN(dwinInitScreen());
   #endif
 
   #if ENABLED(EASYTHREED_UI)
@@ -1634,7 +1641,7 @@ void setup() {
   #endif
 
   #if ENABLED(FT_MOTION)
-    SETUP_RUN(fxdTiCtrl.init());
+    SETUP_RUN(ftMotion.init());
   #endif
 
   marlin_state = MF_RUNNING;
