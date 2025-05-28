@@ -55,11 +55,11 @@ namespace ExtUI {
     screen.printerKilled(error, component);
   }
 
-  void onMediaInserted() { TERN_(HAS_MEDIA, screen.sdCardInserted()); }
-  void onMediaError()    { TERN_(HAS_MEDIA, screen.sdCardError()); }
-  void onMediaRemoved()  { TERN_(HAS_MEDIA, screen.sdCardRemoved()); }
+  void onMediaMounted() { TERN_(HAS_MEDIA, screen.sdCardInserted()); }
+  void onMediaError()   { TERN_(HAS_MEDIA, screen.sdCardError()); }
+  void onMediaRemoved() { TERN_(HAS_MEDIA, screen.sdCardRemoved()); }
 
-  void onPlayTone(const uint16_t frequency, const uint16_t duration) {
+  void onPlayTone(const uint16_t frequency, const uint16_t duration/*=0*/) {
     screen.playTone(frequency, duration);
   }
 
@@ -117,19 +117,15 @@ namespace ExtUI {
     screen.configurationStoreRead(success);
   }
 
+  #if HAS_LEVELING
+    void onLevelingStart() { screen.levelingStart(); }
+    void onLevelingDone() { screen.levelingEnd(); }
+  #endif
+
   #if HAS_MESH
-    void onLevelingStart() {
-      screen.levelingStart();
-    }
-
-    void onLevelingDone() {
-      screen.levelingEnd();
-    }
-
     void onMeshUpdate(const int8_t xpos, const int8_t ypos, const_float_t zval) {
       screen.meshUpdate(xpos, ypos);
     }
-
     void onMeshUpdate(const int8_t xpos, const int8_t ypos, const probe_state_t state) { }
   #endif
 
@@ -147,7 +143,7 @@ namespace ExtUI {
   #endif
 
   #if HAS_PID_HEATING
-    void onPidTuning(const result_t rst) {
+    void onPIDTuning(const result_t rst) {
       // Called for temperature PID tuning result
       screen.pidTuning(rst);
     }

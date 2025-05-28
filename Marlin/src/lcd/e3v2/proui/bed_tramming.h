@@ -37,7 +37,7 @@
 
 #if HAS_TRAMMING_WIZARD
   #ifndef BED_TRAMMING_PROBE_TOLERANCE
-    #define BED_TRAMMING_PROBE_TOLERANCE 0.05
+    #define BED_TRAMMING_PROBE_TOLERANCE 0.05f
   #endif
   #ifndef BED_TRAMMING_LEVELING_ORDER
     #define BED_TRAMMING_LEVELING_ORDER { LF, RF, RB, LB }  // 4 elements only LF, RF, RB and LB are allowed

@@ -23,6 +23,12 @@
 
 #include "../../../inc/MarlinConfig.h"
 
+//
+// e3v2/common/dwin_api.h
+//
+// Included by: e3v2/*/dwin_lcd.h
+//
+
 #if ENABLED(DWIN_MARLINUI_LANDSCAPE)
   #define DWIN_WIDTH  480
   #define DWIN_HEIGHT 272
@@ -168,7 +174,6 @@ inline void dwinDrawBox(uint8_t mode, uint16_t color, uint16_t xStart, uint16_t 
 //  xEnd/yEnd: bottom right point
 void dwinFrameAreaMove(uint8_t mode, uint8_t dir, uint16_t dis,
                          uint16_t color, uint16_t xStart, uint16_t yStart, uint16_t xEnd, uint16_t yEnd);
-
 
 /*---------------------------------------- Text related functions ----------------------------------------*/
 

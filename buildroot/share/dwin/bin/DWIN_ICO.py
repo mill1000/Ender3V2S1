@@ -54,8 +54,7 @@
 #   does not define a name for 39. This is specially handled to
 #   prevent reordering stock icons.
 
-import os
-import struct
+import os, struct
 from PIL import Image
 
 def getJpegResolution(jpegFile):
@@ -125,14 +124,14 @@ class DWIN_ICO_File():
         return
 
     def createFile(self, iconDir, filename):
-        '''Create a new .ico file from the contents of iconDir.
+        """Create a new .ico file from the contents of iconDir.
 
         The contents of iconDir are processed to get image
         resolution, and a new entry is created for each.
 
         Each filename must have a leading number followed by a
         dash, which is the icon index. E.g., "071-ICON_StepX.jpg".
-        '''
+        """
         self.entries = [Entry() for i in range(0,256)]
         # 1. Scan icon directory and record all valid files
         print('Scanning icon directory', iconDir)
@@ -147,7 +146,7 @@ class DWIN_ICO_File():
                 if not (0 <= index <= 255):
                     print('...Ignoring invalid index on', dirEntry.path)
                     continue
-                #dirEntry.path is iconDir/name
+                # dirEntry.path is iconDir/name
                 w,h = getJpegResolution(dirEntry.path)
                 length = dirEntry.stat().st_size
                 e = self.entries[index]
@@ -178,7 +177,7 @@ class DWIN_ICO_File():
                 continue
             e.offset = offset
             offset += e.length
-            #print('%03d: (%d x %d) len=%d off=%d' %
+            # print('%03d: (%d x %d) len=%d off=%d' %
             #      (i, e.width, e.height, e.length, e.offset))
         return
 
@@ -210,17 +209,17 @@ class DWIN_ICO_File():
             return contents
 
 class Entry():
-    '''Entry objects record resolution and size information
+    """Entry objects record resolution and size information
     about each icon stored in an ICO file.
-    '''
+    """
     __slots__ = ('width', 'height', 'offset', 'length', 'filename')
 
-    def __init__(self, w=0, h=0, length=0, offset=0):
+    def __init__(self, w=0, h=0, length=0, offset=0, filename=None):
         self.width = w
         self.height = h
         self.offset = offset
         self.length = length
-        self.filename = None
+        self.filename = filename
 
     def parseRawData(self, rawEntryBytes):
         if len(rawEntryBytes) != 16:

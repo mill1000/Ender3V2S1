@@ -1,8 +1,8 @@
 /**
  * DWIN Enhanced implementation, general defines and data structs for PRO UI
  * Author: Miguel A. Risco-Castillo (MRISCOC)
- * Version: 4.6.3
- * Date: 2023/10/27
+ * Version: 4.7.3
+ * Date: 2024/06/14
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -51,8 +51,17 @@
 #else
   #define DEF_Z_AFTER_HOMING 0
 #endif
-#define DEF_HOTENDPIDT PREHEAT_1_TEMP_HOTEND
-#define DEF_BEDPIDT PREHEAT_1_TEMP_BED
+#ifdef PREHEAT_1_TEMP_HOTEND
+  #define DEF_HOTENDPIDT PREHEAT_1_TEMP_HOTEND
+#else
+  #define DEF_HOTENDPIDT 195
+#endif
+#ifdef PREHEAT_1_TEMP_BED
+  #define DEF_BEDPIDT PREHEAT_1_TEMP_BED
+#else
+  #define DEF_BEDPIDT 60
+#endif
+
 #define DEF_PIDCYCLES 5
 
 #if HAS_BED_PROBE
@@ -64,6 +73,17 @@
 #endif
 
 extern char dateTime[16+1];
+
+enum SelectItem : uint8_t {
+  PAGE_FILES = 0,
+  PAGE_PREPARE,
+  PAGE_CONTROL,
+  PAGE_ADVANCE,
+#if HAS_TOOLBAR
+  PAGE_TOOLBAR,
+#endif
+  PAGE_COUNT,
+};
 
 enum processID : uint8_t {
   // Process ID
@@ -91,14 +111,14 @@ enum processID : uint8_t {
 #if HAS_PID_HEATING || ENABLED(MPC_AUTOTUNE)
   enum tempcontrol_t : uint8_t {
   #if HAS_PID_HEATING
-    PIDTEMP_START = 0,
-    PIDTEMPBED_START,
+    PID_STARTED = 0,
+    PIDBED_STARTED,
     PID_BAD_HEATER_ID,
     PID_TEMP_TOO_HIGH,
     PID_TUNING_TIMEOUT,
   #endif
   #if ENABLED(MPC_AUTOTUNE)
-    MPCTEMP_START,
+    MPC_STARTED,
     MPC_TEMP_ERROR,
     MPC_INTERRUPTED,
   #endif
@@ -140,7 +160,6 @@ typedef struct {
   uint8_t zAfterHoming;
   float manualZOffset;
   uint32_t ledColor;
-  bool adaptiveStepSmoothing;
   bool enablePreview;
 } hmi_data_t;
 
@@ -154,6 +173,15 @@ typedef struct {
   #endif
   uint8_t select  = 0;  // Auxiliary selector variable
 } hmi_value_t;
+
+typedef struct {
+  uint8_t now, last;
+  void set(uint8_t v) { now = last = v; }
+  void reset() { set(0); }
+  bool changed() { bool c = (now != last); if (c) last = now; return c; }
+  bool dec() { if (now) now--; return changed(); }
+  bool inc(uint8_t v) { if (now < (v - 1)) now++; else now = (v - 1); return changed(); }
+} select_t;
 
 typedef struct {
   bool printing_flag:1; // sd or host printing
@@ -170,6 +198,10 @@ extern uint8_t checkkey;
 inline bool isPrinting() { return (printingIsActive() || print_job_timer.isPaused()); }
 inline bool sdPrinting() { return (isPrinting() && IS_SD_FILE_OPEN()); }
 inline bool hostPrinting() { return (isPrinting() && !IS_SD_FILE_OPEN()); }
+
+inline void iconButton(const bool selected, const int iconid, const frame_rect_t &ico, FSTR_P caption) {
+  return DWINUI::iconButton(selected, hmiData.colorHighlight, iconid, ico, caption);
+}
 
 // Popups
 #if HAS_HOTEND || HAS_HEATED_BED
@@ -256,11 +288,10 @@ void dwinHomingDone();
   void dwinLevelingDone();
 #endif
 void dwinPrintStarted();
-void dwinPrintPause();
 void dwinPrintResume();
 void dwinPrintFinished();
 void dwinPrintAborted();
-void dwinPrintHeader(const char *text);
+void setPrintTitle(const char *text);
 void dwinSetColorDefaults();
 void dwinSetColors();
 void dwinCopySettingsTo(char * const buff);
@@ -332,12 +363,17 @@ void drawMaxAccelMenu();
 #if ENABLED(CLASSIC_JERK)
   void drawMaxJerkMenu();
 #endif
-void drawStepsMenu();
+#if ENABLED(EDITABLE_STEPS_PER_UNIT)
+  void drawStepsMenu();
+#endif
 #if ANY(HAS_BED_PROBE, BABYSTEPPING)
   void drawZOffsetWizMenu();
 #endif
 #if ENABLED(INDIVIDUAL_AXIS_HOMING_SUBMENU)
   void drawHomingMenu();
+#endif
+#if ENABLED(EDITABLE_HOMING_FEEDRATE)
+  void drawHomingFeedrateMenu();
 #endif
 #if ENABLED(FWRETRACT)
   void drawFWRetractMenu();

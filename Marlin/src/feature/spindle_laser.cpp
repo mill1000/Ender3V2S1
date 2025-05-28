@@ -35,10 +35,14 @@
 #endif
 
 #if ENABLED(I2C_AMMETER)
-  #include "../feature/ammeter.h"
+  #include "ammeter.h"
 #endif
 
-#if ALL(DWIN_LCD_PROUI, CV_LASER_MODULE)
+#if ENABLED(CV_LASER_MODULE)
+  #include "../prouiex/cv_laser_module.h"
+#endif
+
+#if ENABLED(DWIN_LCD_PROUI)
   #include "../lcd/e3v2/proui/dwin.h"
 #endif
 

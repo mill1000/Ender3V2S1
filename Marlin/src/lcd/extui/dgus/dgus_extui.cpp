@@ -48,11 +48,11 @@ namespace ExtUI {
     while (!screen.loop());  // Wait while anything is left to be sent
   }
 
-  void onMediaInserted() { TERN_(HAS_MEDIA, screen.sdCardInserted()); }
-  void onMediaError()    { TERN_(HAS_MEDIA, screen.sdCardError()); }
-  void onMediaRemoved()  { TERN_(HAS_MEDIA, screen.sdCardRemoved()); }
+  void onMediaMounted() { TERN_(HAS_MEDIA, screen.sdCardInserted()); }
+  void onMediaError()   { TERN_(HAS_MEDIA, screen.sdCardError()); }
+  void onMediaRemoved() { TERN_(HAS_MEDIA, screen.sdCardRemoved()); }
 
-  void onPlayTone(const uint16_t frequency, const uint16_t duration) {}
+  void onPlayTone(const uint16_t frequency, const uint16_t duration/*=0*/) {}
   void onPrintTimerStarted() {}
   void onPrintTimerPaused() {}
   void onPrintTimerStopped() {}
@@ -74,6 +74,7 @@ namespace ExtUI {
 
   void onHomingStart() {}
   void onHomingDone() {}
+
   void onPrintDone() {}
 
   void onFactoryReset() {}
@@ -141,10 +142,11 @@ namespace ExtUI {
   #endif
 
   #if HAS_PID_HEATING
-    void onPidTuning(const result_t rst) {
+    void onPIDTuning(const result_t rst) {
       // Called for temperature PID tuning result
       switch (rst) {
         case PID_STARTED:
+        case PID_BED_STARTED:
           screen.setStatusMessage(GET_TEXT_F(MSG_PID_AUTOTUNE));
           break;
         case PID_BAD_HEATER_ID:
@@ -165,7 +167,7 @@ namespace ExtUI {
   #endif
 
   void onSteppersDisabled() {}
-  void onSteppersEnabled()  {}
+  void onSteppersEnabled() {}
 }
 
 #endif // HAS_DGUS_LCD_CLASSIC

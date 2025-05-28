@@ -50,11 +50,11 @@ namespace ExtUI {
     screen.printerKilled(error, component);
   }
 
-  void onMediaInserted() { TERN_(HAS_MEDIA, screen.sdCardInserted()); }
+  void onMediaMounted()  { TERN_(HAS_MEDIA, screen.sdCardInserted()); }
   void onMediaError()    { TERN_(HAS_MEDIA, screen.sdCardError()); }
   void onMediaRemoved()  { TERN_(HAS_MEDIA, screen.sdCardRemoved()); }
 
-  void onPlayTone(const uint16_t frequency, const uint16_t duration) {
+  void onPlayTone(const uint16_t frequency, const uint16_t duration/*=0*/) {
     screen.playTone(frequency, duration);
   }
 
@@ -84,6 +84,7 @@ namespace ExtUI {
 
   void onHomingStart() {}
   void onHomingDone() {}
+
   void onPrintDone() {}
 
   void onFactoryReset() {
@@ -138,14 +139,14 @@ namespace ExtUI {
   #endif
 
   #if HAS_PID_HEATING
-    void onPidTuning(const result_t rst) {
+    void onPIDTuning(const result_t rst) {
       // Called for temperature PID tuning result
       screen.pidTuning(rst);
     }
   #endif
 
   void onSteppersDisabled() {}
-  void onSteppersEnabled()  {}
+  void onSteppersEnabled() {}
 }
 
 #endif // DGUS_LCD_UI_RELOADED

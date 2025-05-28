@@ -101,7 +101,11 @@ constexpr uint16_t DEF_MESH_MAX_Y = MESH_MAX_Y;
 constexpr uint16_t DEF_PROBING_MARGIN = PROBING_MARGIN;
 #define MIN_PROBE_MARGIN 5
 #define MAX_PROBE_MARGIN 60
-constexpr uint16_t DEF_Z_PROBE_FEEDRATE_SLOW = (Z_PROBE_FEEDRATE_FAST / 2);
+#ifdef Z_PROBE_FEEDRATE_FAST
+  constexpr uint16_t DEF_Z_PROBE_FEEDRATE_SLOW = (Z_PROBE_FEEDRATE_FAST / 2);
+#else
+  constexpr uint16_t DEF_Z_PROBE_FEEDRATE_SLOW = (16*60) / 2;
+#endif
 #ifndef MULTIPLE_PROBING
   #define MULTIPLE_PROBING 0
 #endif

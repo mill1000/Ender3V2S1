@@ -45,11 +45,11 @@ namespace ExtUI {
     dgus.printerKilled(error, component);
   }
 
-  void onMediaInserted() { dgus.mediaEvent(AC_media_inserted); }
-  void onMediaError()    { dgus.mediaEvent(AC_media_error);    }
-  void onMediaRemoved()  { dgus.mediaEvent(AC_media_removed);  }
+  void onMediaMounted() { dgus.mediaEvent(AC_media_inserted); }
+  void onMediaError()   { dgus.mediaEvent(AC_media_error);    }
+  void onMediaRemoved() { dgus.mediaEvent(AC_media_removed);  }
 
-  void onPlayTone(const uint16_t frequency, const uint16_t duration) {
+  void onPlayTone(const uint16_t frequency, const uint16_t duration/*=0*/) {
     #if ENABLED(SPEAKER)
       ::tone(BEEPER_PIN, frequency, duration);
     #endif
@@ -58,12 +58,14 @@ namespace ExtUI {
   void onPrintTimerStarted() { dgus.timerEvent(AC_timer_started); }
   void onPrintTimerPaused()  { dgus.timerEvent(AC_timer_paused);  }
   void onPrintTimerStopped() { dgus.timerEvent(AC_timer_stopped); }
+
   void onPrintDone() {}
 
-  void onFilamentRunout(const extruder_t)            { dgus.filamentRunout();         }
+  void onFilamentRunout(const extruder_t)            { dgus.filamentRunout(); }
 
   void onUserConfirmRequired(const char * const msg) { dgus.confirmationRequest(msg); }
-  void onStatusChanged(const char * const msg)       { dgus.statusChange(msg);        }
+
+  void onStatusChanged(const char * const msg)       { dgus.statusChange(msg); }
 
   void onHomingStart()    { dgus.homingStart(); }
   void onHomingDone()     { dgus.homingComplete(); }
@@ -95,7 +97,6 @@ namespace ExtUI {
   void onPostprocessSettings() {
     // Called after loading or resetting stored settings
     dgus.paramInit();
-    dgus.powerLoss();
   }
 
   void onSettingsStored(const bool success) {
@@ -125,9 +126,13 @@ namespace ExtUI {
     }
   #endif
 
+  #if ENABLED(PREVENT_COLD_EXTRUSION)
+    void onSetMinExtrusionTemp(const celsius_t) {}
+  #endif
+
   #if ENABLED(POWER_LOSS_RECOVERY)
     // Called when power-loss is enabled/disabled
-    void onSetPowerLoss(const bool) { dgus.powerLoss(); }
+    void onSetPowerLoss(const bool) { /* nothing to do */ }
     // Called when power-loss state is detected
     void onPowerLoss() { /* handled internally */ }
     // Called on resume from power-loss
@@ -135,7 +140,7 @@ namespace ExtUI {
   #endif
 
   #if HAS_PID_HEATING
-    void onPidTuning(const result_t rst) {
+    void onPIDTuning(const result_t rst) {
       // Called for temperature PID tuning result
       switch (rst) {
         case PID_STARTED:        break;
@@ -148,7 +153,7 @@ namespace ExtUI {
   #endif
 
   void onSteppersDisabled() {}
-  void onSteppersEnabled()  {}
+  void onSteppersEnabled() {}
 }
 
 #endif // ANYCUBIC_LCD_VYPER

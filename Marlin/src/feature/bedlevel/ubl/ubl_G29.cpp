@@ -615,7 +615,6 @@ void unified_bed_leveling::G29() {
 
   #endif // UBL_DEVEL_DEBUGGING
 
-
   //
   // Load a Mesh from the EEPROM
   //
@@ -681,11 +680,11 @@ void unified_bed_leveling::G29() {
     ui.release();
   #endif
 
-  #ifdef Z_PROBE_END_SCRIPT
-    if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPGM("Z Probe End Script: ", Z_PROBE_END_SCRIPT);
+  #ifdef EVENT_GCODE_AFTER_G29
+    if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPGM("Z Probe End Script: ", EVENT_GCODE_AFTER_G29);
     if (probe_deployed) {
       planner.synchronize();
-      gcode.process_subcommands_now(F(Z_PROBE_END_SCRIPT));
+      gcode.process_subcommands_now(F(EVENT_GCODE_AFTER_G29));
     }
   #else
     UNUSED(probe_deployed);
@@ -767,7 +766,8 @@ void unified_bed_leveling::shift_mesh_height() {
 
       const grid_count_t point_num = (GRID_MAX_POINTS - count) + 1;
       SERIAL_ECHOLNPGM("Probing mesh point ", point_num, "/", GRID_MAX_POINTS, ".");
-      TERN_(HAS_STATUS_MESSAGE, ui.status_printf(0, F(S_FMT " %i/%i"), GET_TEXT(MSG_PROBING_POINT), point_num, int(GRID_MAX_POINTS)));
+      TERN_(HAS_STATUS_MESSAGE, ui.status_printf(0, F(S_FMT " %i/%i"), GET_TEXT_F(MSG_PROBING_POINT), point_num, int(GRID_MAX_POINTS)));
+      TERN_(HAS_BACKLIGHT_TIMEOUT, ui.refresh_backlight_timeout());
 
       #if HAS_MARLINUI_MENU
         if (ui.button_pressed()) {
@@ -1513,7 +1513,7 @@ bool unified_bed_leveling::smart_fill_one(const uint8_t x, const uint8_t y, cons
 
       for (uint8_t i = 0; i < 3; ++i) {
         SERIAL_ECHOLNPGM("Tilting mesh (", i + 1, "/3)");
-        TERN_(HAS_STATUS_MESSAGE, ui.status_printf(0, F(S_FMT " %i/3"), GET_TEXT(MSG_LCD_TILTING_MESH), i + 1));
+        TERN_(HAS_STATUS_MESSAGE, ui.status_printf(0, F(S_FMT " %i/3"), GET_TEXT_F(MSG_LCD_TILTING_MESH), i + 1));
 
         measured_z = probe.probe_at_point(points[i], i < 2 ? PROBE_PT_RAISE : PROBE_PT_LAST_STOW, param.V_verbosity);
         if ((abort_flag = isnan(measured_z))) break;
@@ -1576,7 +1576,7 @@ bool unified_bed_leveling::smart_fill_one(const uint8_t x, const uint8_t y, cons
           #endif
 
           SERIAL_ECHOLNPGM("Tilting mesh point ", point_num, "/", total_points, "\n");
-          TERN_(HAS_STATUS_MESSAGE, ui.status_printf(0, F(S_FMT " %i/%i"), GET_TEXT(MSG_LCD_TILTING_MESH), point_num, total_points));
+          TERN_(HAS_STATUS_MESSAGE, ui.status_printf(0, F(S_FMT " %i/%i"), GET_TEXT_F(MSG_LCD_TILTING_MESH), point_num, total_points));
 
           measured_z = probe.probe_at_point(rpos, parser.seen_test('E') ? PROBE_PT_STOW : PROBE_PT_RAISE, param.V_verbosity); // TODO: Needs error handling
 

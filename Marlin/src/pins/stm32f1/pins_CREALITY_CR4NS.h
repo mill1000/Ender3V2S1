@@ -33,11 +33,6 @@
   #error "CR4NS200320C13 only supports one hotend / E-stepper."
 #endif
 
-// Is E0_DRIVER_TYPE TMC2208_STANDALONE?
-// #if !AXIS_DRIVER_TYPE_X(TMC2208) || !AXIS_DRIVER_TYPE_Y(TMC2208) || !AXIS_DRIVER_TYPE_Z(TMC2208) || !AXIS_DRIVER_TYPE_E0(?)
-//   #error "This board has onboard TMC2208 drivers for X, Y, Z, and E0."
-// #endif
-
 #ifndef BOARD_INFO_NAME
   #define BOARD_INFO_NAME      "CR4NS200320C13"
 #endif
@@ -46,23 +41,11 @@
 #endif
 #define BOARD_WEBSITE_URL      "www.creality.com"
 
-#define BOARD_NO_NATIVE_USB
-
 //
 // EEPROM
 //
-//#if NO_EEPROM_SELECTED
-  #define IIC_BL24CXX_EEPROM                      // EEPROM on I2C-0
-  // #define SDCARD_EEPROM_EMULATION
-//#endif
-
-#if ENABLED(IIC_BL24CXX_EEPROM)
-  #define IIC_EEPROM_SDA                    PA7
-  #define IIC_EEPROM_SCL                    PA8
-  #define MARLIN_EEPROM_SIZE                0x800  // 2Kb (24C16)
-#elif ENABLED(SDCARD_EEPROM_EMULATION)
-  #define MARLIN_EEPROM_SIZE                0x800  // 2Kb
-#endif
+#define IIC_EEPROM_SDA                      PA7
+#define IIC_EEPROM_SCL                      PA8
 
 //
 // Servos
@@ -70,7 +53,6 @@
 #ifndef SERVO0_PIN
   #define SERVO0_PIN                        PC13   // BLTouch OUT
 #endif
-
 #ifndef Z_MIN_PROBE_PIN
   #define Z_MIN_PROBE_PIN                   PC14   // BLTouch IN
 #endif
@@ -101,27 +83,35 @@
 // #define FAN2_PIN                            PB1   // Controller fan FET
 
 //
-// Auto fans
+// Steppers
 //
 // #ifndef CONTROLLER_FAN_PIN
 //   #define CONTROLLER_FAN_PIN                FAN2_PIN
 // #endif
 
 #if HAS_TMC_UART
+
   // Reduce baud rate to improve software serial reliability
   #define TMC_BAUD_RATE 19200
 
   // Software serial
   #define X_SERIAL_TX_PIN                   PB12
-  #define X_SERIAL_RX_PIN                   X_SERIAL_TX_PIN
+  #define X_DIAG_PIN                        PB10
 
   #define Y_SERIAL_TX_PIN                   PB13
   #define Y_SERIAL_RX_PIN                   Y_SERIAL_TX_PIN
+  #define Y_DIAG_PIN                        PB11
 
   #define Z_SERIAL_TX_PIN                   PB14
   #define Z_SERIAL_RX_PIN                   Z_SERIAL_TX_PIN
 
 #endif // HAS_TMC_UART
+
+//
+// SD Card
+//
+#define ONBOARD_SPI_DEVICE                     1  // SPI1
+#define ONBOARD_SD_CS_PIN                   PA4   // SDSS
 
 #if ANY(RET6_12864_LCD, HAS_DWIN_E3V2, IS_DWIN_MARLINUI)
 
@@ -143,14 +133,6 @@
   #define EXP3_06_PIN                       PB0
   #define EXP3_07_PIN                       PA12
   #define EXP3_08_PIN                       PA11
-
-  #ifndef BEEPER_PIN
-    #define BEEPER_PIN               EXP1_06_PIN  // BEEP
-  #endif
-
-  #define BTN_ENC                    EXP1_05_PIN  // EN
-  #define BTN_EN1                    EXP1_08_PIN  // A
-  #define BTN_EN2                    EXP1_07_PIN  // B
 
 #endif
 

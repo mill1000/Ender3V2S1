@@ -42,7 +42,7 @@
 typedef struct {
   int32_t maxValue     = 0;        // Auxiliar max integer/scaled float value
   int32_t minValue     = 0;        // Auxiliar min integer/scaled float value
-  int8_t dp            = 0;        // Auxiliar decimal places
+  uint8_t dp           = 0;        // Auxiliar decimal places
   int32_t value        = 0;        // Auxiliar integer / scaled float value
   int16_t *intPtr      = nullptr;  // Auxiliar pointer to 16 bit integer variable
   float *floatPtr      = nullptr;  // Auxiliar pointer to float variable
@@ -60,7 +60,7 @@ struct MenuItem_t {
   OnClickItem onClick = nullptr;
   void* value;
 };
-extern int8_t menuItemCount;
+extern uint8_t menuItemCount;
 
 constexpr uint8_t menu_max_items = MENU_MAX_ITEMS;
 
@@ -96,7 +96,8 @@ inline void drawMenuItem(const int8_t line, const uint8_t icon=0, FSTR_P label=n
 void drawCheckboxLine(const int8_t line, const bool checked);
 void showCheckboxLine(const bool checked);
 void toggleCheckboxLine(bool &checked);
-void drawMenuIntValue(uint16_t bcolor, const int8_t line, uint8_t iNum, const int32_t value=0);
+void drawMenuIntValue(const uint16_t bcolor, const int8_t line, uint8_t iNum, const int32_t value=0);
+void drawMenuFloatValue(const uint16_t bcolor, const int8_t line, uint8_t dp, const float value);
 void drawItem(int8_t pos, int8_t line);
 
 void onDrawMenuItem(int8_t pos, int8_t line);
@@ -108,6 +109,8 @@ void onDrawPInt32Menu(int8_t pos, int8_t line);
 void onDrawFloatMenu(int8_t pos, int8_t line, uint8_t dp, const float value);
 void onDrawPFloatMenu(int8_t pos, int8_t line, uint8_t dp);
 inline void onDrawPFloatMenu(int8_t pos, int8_t line) { onDrawPFloatMenu(pos, line, UNITFDIGITS); };
+inline void onDrawPFloat0Menu(int8_t pos, int8_t line) { onDrawPFloatMenu(pos, line, 0); };
+inline void onDrawPFloat1Menu(int8_t pos, int8_t line) { onDrawPFloatMenu(pos, line, 1); };
 inline void onDrawPFloat2Menu(int8_t pos, int8_t line) { onDrawPFloatMenu(pos, line, 2); };
 inline void onDrawPFloat3Menu(int8_t pos, int8_t line) { onDrawPFloatMenu(pos, line, 3); };
 inline void onDrawPFloat4Menu(int8_t pos, int8_t line) { onDrawPFloatMenu(pos, line, 4); };

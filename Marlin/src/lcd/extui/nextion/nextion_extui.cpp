@@ -38,19 +38,44 @@ namespace ExtUI {
   void onStartup() { nextion.startup();  }
   void onIdle() { nextion.idleLoop(); }
   void onPrinterKilled(FSTR_P const error, FSTR_P const component) { nextion.printerKilled(error, component); }
-  void onMediaInserted() {}
+
+  void onMediaMounted() {}
   void onMediaError() {}
   void onMediaRemoved() {}
-  void onPlayTone(const uint16_t frequency, const uint16_t duration) {}
+
+  void onPlayTone(const uint16_t frequency, const uint16_t duration/*=0*/) {}
   void onPrintTimerStarted() {}
   void onPrintTimerPaused() {}
   void onPrintTimerStopped() {}
   void onFilamentRunout(const extruder_t) {}
+
   void onUserConfirmRequired(const char * const msg) { nextion.confirmationRequest(msg); }
+
+  // For fancy LCDs include an icon ID, message, and translated button title
+  void onUserConfirmRequired(const int icon, const char * const cstr, FSTR_P const fBtn) {
+    onUserConfirmRequired(cstr);
+    UNUSED(icon); UNUSED(fBtn);
+  }
+  void onUserConfirmRequired(const int icon, FSTR_P const fstr, FSTR_P const fBtn) {
+    onUserConfirmRequired(fstr);
+    UNUSED(icon); UNUSED(fBtn);
+  }
+
+  #if ENABLED(ADVANCED_PAUSE_FEATURE)
+    void onPauseMode(
+      const PauseMessage message,
+      const PauseMode mode/*=PAUSE_MODE_SAME*/,
+      const uint8_t extruder/*=active_extruder*/
+    ) {
+      stdOnPauseMode(message, mode, extruder);
+    }
+  #endif
+
   void onStatusChanged(const char * const msg) { nextion.statusChange(msg); }
 
   void onHomingStart() {}
   void onHomingDone() {}
+
   void onPrintDone() { nextion.PrintFinished(); }
 
   void onFactoryReset() {}
@@ -117,14 +142,14 @@ namespace ExtUI {
   #endif
 
   #if HAS_PID_HEATING
-    void onPidTuning(const result_t rst) {
+    void onPIDTuning(const result_t rst) {
       // Called for temperature PID tuning result
       nextion.panelInfo(37);
     }
   #endif
 
   void onSteppersDisabled() {}
-  void onSteppersEnabled()  {}
+  void onSteppersEnabled() {}
 
 }
 

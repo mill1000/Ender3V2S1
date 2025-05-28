@@ -1,8 +1,8 @@
 /**
  * DWIN Enhanced graphics implementation for PRO UI
  * Author: Miguel A. Risco-Castillo (MRISCOC)
- * Version: 4.2.1
- * Date: 2023/09/30
+ * Version: 4.3.1
+ * Date: 2024/06/14
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -197,9 +197,8 @@
 #define STATUS_Y 354
 #define LCD_WIDTH (DWIN_WIDTH / 8)  // only if the default fontID is font8x16
 
-// Minimum unit (0.1) : multiple (10)
 #define UNITFDIGITS 1
-#define MINUNITMULT POW(10, UNITFDIGITS)
+#define MINUNITMULT POW(10, UNITFDIGITS) // Minimum unit (0.1) : multiple (10)
 
 constexpr uint8_t  TITLE_HEIGHT = 30,                          // Title bar height
                    MLINE = 53,                                 // Menu line height
@@ -565,6 +564,7 @@ namespace DWINUI {
 
   // ------------------------- Buttons ------------------------------//
 
+  void iconButton(const bool selected, const uint16_t highlight, const int iconid, const frame_rect_t &ico, FSTR_P caption);
   void drawButton(uint16_t color, uint16_t bcolor, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const char * const caption);
   inline void drawButton(uint16_t color, uint16_t bcolor, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, FSTR_P caption) {
     drawButton(color, bcolor, x1, y1, x2, y2, FTOP(caption));

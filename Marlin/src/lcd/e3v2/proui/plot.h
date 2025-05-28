@@ -1,8 +1,8 @@
 /**
  * DWIN Single var plot
  * Author: Miguel A. Risco-Castillo
- * Version: 3.1.3
- * Date: 2023/07/12
+ * Version: 4.1.3
+ * Date: 2024/06/15
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -27,6 +27,7 @@ class Plot {
 public:
   static void draw(const frame_rect_t &frame, const_float_t max, const_float_t ref=0);
   static void update(const_float_t value);
+  static void putPoint(const uint16_t color, const_float_t value);
 };
 
 extern Plot plot;

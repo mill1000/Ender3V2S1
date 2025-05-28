@@ -1,8 +1,8 @@
 /**
  * DWIN Enhanced graphics implementation for PRO UI
  * Author: Miguel A. Risco-Castillo (MRISCOC)
- * Version: 4.2.1
- * Date: 2023/09/30
+ * Version: 4.3.1
+ * Date: 2024/06/14
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -187,7 +187,11 @@ void DWINUI::drawInt(uint8_t bShow, bool signedMode, fontid_t fid, uint16_t colo
 //  value: float value
 void DWINUI::drawFloat(uint8_t bShow, bool signedMode, fontid_t fid, uint16_t color, uint16_t bColor, uint8_t iNum, uint8_t fNum, uint16_t x, uint16_t y, float value) {
   char nstr[10];
-  dwinDrawString(bShow, fid, color, bColor, x, y, dtostrf(value, iNum + (signedMode ? 2:1) + fNum, fNum, nstr));
+  if (fNum > 0) {
+    dwinDrawString(bShow, fid, color, bColor, x, y, dtostrf(value, iNum + (signedMode ? 2:1) + fNum, fNum, nstr));
+  } else {
+    drawInt(bShow, signedMode, fid, color, bColor, iNum, x, y, value);
+  }
 }
 
 // ------------------------- Icons -------------------------------//
@@ -204,6 +208,14 @@ void DWINUI::iconShow(bool BG, uint8_t icon, uint16_t x, uint16_t y) {
 }
 
 // ------------------------- Buttons ------------------------------//
+
+void DWINUI::iconButton(const bool selected, const uint16_t highlight, const int iconid, const frame_rect_t &ico, FSTR_P caption) {
+  drawIconWB(iconid + selected, ico.x, ico.y);
+  if (selected) drawBox(0, highlight, ico);
+  const uint16_t x = ico.x + (ico.w - strlen_P(FTOP(caption)) * fontWidth()) / 2,
+                 y = (ico.y + ico.h - 20) - fontHeight() / 2;
+  drawString(x, y, caption);
+}
 
 void DWINUI::drawButton(uint16_t color, uint16_t bcolor, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const char * const caption) {
   dwinDrawRectangle(1, bcolor, x1, y1, x2, y2);
@@ -333,7 +345,7 @@ void Title::draw(const char * const caption) {
   #if ENABLED(TITLE_CENTERED)
     DWINUI::drawCenteredString(false, DWIN_FONT_HEAD, textColor, backColor, (TITLE_HEIGHT - DWINUI::fontHeight(DWIN_FONT_HEAD)) / 2 - 1, caption);
   #else
-    dwinDrawString(false, DWIN_FONT_HEAD, textColor, backColor, 14, (TITLE_HEIGHT - DWINUI::fontHeight(DWIN_FONT_HEAD)) / 2 - 1, caption);
+    dwinDrawString(false, DWIN_FONT_HEAD, textColor, backColor, 10, (TITLE_HEIGHT - DWINUI::fontHeight(DWIN_FONT_HEAD)) / 2 - 1, caption);
   #endif
 }
 

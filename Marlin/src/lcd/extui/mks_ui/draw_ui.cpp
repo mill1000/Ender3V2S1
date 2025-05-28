@@ -660,12 +660,8 @@ char *creat_title_text() {
         card.openFileRead(cur_name);
         if (card.isFileOpen()) {
           feedrate_percentage = 100;
-          planner.flow_percentage[0] = 100;
-          planner.e_factor[0]        = planner.flow_percentage[0] * 0.01;
-          #if HAS_MULTI_EXTRUDER
-            planner.flow_percentage[1] = 100;
-            planner.e_factor[1]        = planner.flow_percentage[1] * 0.01;
-          #endif
+          TERN_(HAS_EXTRUDERS, planner.set_flow(0, 100));
+          TERN_(HAS_MULTI_EXTRUDER, planner.set_flow(1, 100));
           card.startOrResumeFilePrinting();
           TERN_(POWER_LOSS_RECOVERY, recovery.prepare());
           once_flag = false;
@@ -770,7 +766,7 @@ void GUI_RefreshPage() {
         disp_print_time();
         disp_fan_Zpos();
       }
-      if (printing_rate_update_flag || marlin_state == MF_SD_COMPLETE) {
+      if (printing_rate_update_flag || marlin_state == MarlinState::MF_SD_COMPLETE) {
         printing_rate_update_flag = false;
         if (!gcode_preview_over) setProBarRate();
       }
@@ -1059,7 +1055,9 @@ void draw_return_ui() {
       case DELTA_LEVELING_PARA_UI:      break;
       case MANUAL_LEVELING_POSITION_UI: lv_draw_tramming_pos_settings(); break;
       case MAXFEEDRATE_UI:              lv_draw_max_feedrate_settings(); break;
-      case STEPS_UI:                    lv_draw_step_settings(); break;
+      #if ENABLED(EDITABLE_STEPS_PER_UNIT)
+        case STEPS_UI:                  lv_draw_step_settings(); break;
+      #endif
       case ACCELERATION_UI:             lv_draw_acceleration_settings(); break;
       #if ENABLED(CLASSIC_JERK)
         case JERK_UI:                   lv_draw_jerk_settings(); break;

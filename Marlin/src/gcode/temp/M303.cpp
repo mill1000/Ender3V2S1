@@ -68,8 +68,8 @@ void GcodeSuite::M303() {
     default:
       SERIAL_ECHOPGM(STR_PID_AUTOTUNE);
       SERIAL_ECHOLNPGM(STR_PID_BAD_HEATER_ID);
-      TERN_(EXTENSIBLE_UI, ExtUI::onPidTuning(ExtUI::result_t::PID_BAD_HEATER_ID));
-      TERN_(DWIN_LCD_PROUI, dwinPidTuning(PID_BAD_HEATER_ID));
+      TERN_(EXTENSIBLE_UI, ExtUI::onPIDTuning(ExtUI::result_t::PID_BAD_HEATER_ID));
+      TERN_(PROUI_PID_TUNE, dwinPidTuning(PID_BAD_HEATER_ID));
       return;
   }
 
